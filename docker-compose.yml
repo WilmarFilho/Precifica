@@ -1,0 +1,18 @@
+
+services:
+  precifica-app:
+    # Nome do serviço
+    container_name: precifica-app
+    # Indica que a imagem deve ser construída a partir do Dockerfile no diretório atual:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Mapeamento de portas: 3002 da máquina host para 3002 do container
+    # A porta 3002 é a porta fixa definida para o serviço.
+    ports:
+      - "3002:3002"
+    # Reinicia o container se ele falhar
+    restart: always
+    # Carrega variáveis de ambiente do arquivo .env (local)
+    env_file:
+      - .env
