@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Suspense } from "react";
 
-async function ErrorContent({
+async function ConteudoErro({
   searchParams,
 }: {
   searchParams: Promise<{ error: string }>;
@@ -12,18 +12,18 @@ async function ErrorContent({
     <>
       {params?.error ? (
         <p className="text-sm text-muted-foreground">
-          Code error: {params.error}
+          Erro: {params.error}
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          An unspecified error occurred.
+          Ocorreu um erro não especificado.
         </p>
       )}
     </>
   );
 }
 
-export default function Page({
+export default function PaginaErro({
   searchParams,
 }: {
   searchParams: Promise<{ error: string }>;
@@ -35,12 +35,12 @@ export default function Page({
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">
-                Sorry, something went wrong.
+                Ocorreu um erro
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Suspense>
-                <ErrorContent searchParams={searchParams} />
+                <ConteudoErro searchParams={searchParams} />
               </Suspense>
             </CardContent>
           </Card>

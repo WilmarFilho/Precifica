@@ -34,7 +34,7 @@ export function SignUpForm({
     setError(null);
 
     if (password !== repeatPassword) {
-      setError("Passwords do not match");
+        setError("As senhas não coincidem");
       setIsLoading(false);
       return;
     }
@@ -48,7 +48,7 @@ export function SignUpForm({
         },
       });
       if (error) throw error;
-      router.push("/auth/sign-up-success");
+        router.push("/autenticacao/cadastro-sucesso");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -60,14 +60,14 @@ export function SignUpForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+            <CardTitle className="text-2xl">Cadastrar</CardTitle>
+            <CardDescription>Crie uma nova conta</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">E-mail</Label>
                 <Input
                   id="email"
                   type="email"
@@ -106,12 +106,15 @@ export function SignUpForm({
                 {isLoading ? "Creating an account..." : "Sign up"}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Already have an account?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
-                Login
-              </Link>
-            </div>
+              <div className="mt-4 text-center text-sm">
+                Já possui uma conta?{" "}
+                <Link
+                  href="/autenticacao/entrar"
+                  className="underline underline-offset-4"
+                >
+                  Entrar
+                </Link>
+              </div>
           </form>
         </CardContent>
       </Card>

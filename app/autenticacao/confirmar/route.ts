@@ -17,14 +17,14 @@ export async function GET(request: NextRequest) {
       token_hash,
     });
     if (!error) {
-      // redirect user to specified redirect URL or root of app
+      // redireciona usuário para a URL especificada ou para a raiz
       redirect(next);
     } else {
-      // redirect the user to an error page with some instructions
-      redirect(`/auth/error?error=${error?.message}`);
+      // redireciona para página de erro com instruções
+      redirect(`/autenticacao/erro?error=${error?.message}`);
     }
   }
 
-  // redirect the user to an error page with some instructions
-  redirect(`/auth/error?error=No token hash or type`);
+  // redireciona para página de erro com instruções
+  redirect(`/autenticacao/erro?error=No token hash or type`);
 }

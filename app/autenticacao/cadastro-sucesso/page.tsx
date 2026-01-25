@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function Page() {
+export default function PaginaCadastroSucesso() {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -14,14 +14,13 @@ export default function Page() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">
-                Thank you for signing up!
+                Cadastro realizado com sucesso!
               </CardTitle>
-              <CardDescription>Check your email to confirm</CardDescription>
+              <CardDescription>Confira seu e-mail para confirmar</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                You&apos;ve successfully signed up. Please check your email to
-                confirm your account before signing in.
+                Sua conta foi criada. Por favor, confirme seu cadastro pelo e-mail antes de acessar.
               </p>
             </CardContent>
           </Card>
