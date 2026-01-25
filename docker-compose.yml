@@ -1,4 +1,3 @@
-
 services:
   precifica-app:
     # Nome do serviço

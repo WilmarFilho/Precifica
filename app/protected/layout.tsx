@@ -6,11 +6,19 @@ import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
 
-export default function ProtectedLayout({
+import { createClient } from "@/lib/supabase/server";
+
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let user = null;
+  if (hasEnvVars) {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getClaims();
+    user = data?.claims ?? null;
+  }
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col gap-20 items-center">
@@ -25,9 +33,7 @@ export default function ProtectedLayout({
             {!hasEnvVars ? (
               <EnvVarWarning />
             ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
+              <AuthButton user={user} />
             )}
           </div>
         </nav>
