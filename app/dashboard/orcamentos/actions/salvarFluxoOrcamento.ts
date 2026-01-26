@@ -10,7 +10,7 @@ type ValorInsert = Database['public']['Tables']['orcamento_versao_valores']['Ins
 interface FluxoOrcamentoPayload {
   orcamentoId?: string;
   clienteId: string;
-  titulo: string;
+  titulo: string; // Usado apenas na criação do primeiro registro
   userId: string;
   markup: number;
   valores: Array<{
@@ -24,7 +24,7 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
   const supabase = await createClient();
   let orcamentoId = payload.orcamentoId;
 
-  // 1. Criar ou Atualizar Orçamento Base
+  // 1. Criar Orçamento Base (Apenas se for novo)
   if (!orcamentoId) {
     const { data: orcamento, error: orcError } = await supabase
       .from("orcamentos")
@@ -33,8 +33,7 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
         titulo: payload.titulo,
         user_id: payload.userId,
       })
-      .select()
-      .single();
+      .select().single();
 
     if (orcError || !orcamento) throw new Error("Erro ao criar orçamento");
     orcamentoId = orcamento.id;
@@ -50,20 +49,19 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 
   const nextVersao = (versoes?.[0]?.versao_numero || 0) + 1;
 
-  // 3. Criar a Versão (Histórico)
+  // 3. Criar a Versão (Histórico imutável)
   const { data: versao, error: vError } = await supabase
     .from("orcamento_versoes")
     .insert({
       orcamento_id: orcamentoId,
       versao_numero: nextVersao,
-      descricao_alteracao: `Versão ${nextVersao} - ${new Date().toLocaleDateString('pt-BR')}`,
+      descricao_alteracao: `Cálculo gerado em ${new Date().toLocaleString('pt-BR')}`,
     } as VersaoInsert)
-    .select()
-    .single();
+    .select().single();
 
   if (vError || !versao) throw new Error("Erro ao criar versão");
 
-  // 4. Inserir os Valores da Grade
+  // 4. Inserir os Valores na Grade
   const valoresInsert: ValorInsert[] = payload.valores.map((v) => ({
     versao_id: versao.id,
     insumo_id: v.insumo_id,
@@ -77,6 +75,6 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 
   if (valError) throw new Error(`Erro ao salvar valores: ${valError.message}`);
 
-  revalidatePath("/dashboard/orcamentos");
+  revalidatePath(`/dashboard/orcamentos/${orcamentoId}`);
   return { ok: true, orcamentoId };
 }
