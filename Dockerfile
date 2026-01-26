@@ -1,29 +1,47 @@
 # --- STAGE 1: BUILD ---
 FROM node:20-alpine AS builder
-# Define o diretório de trabalho
 WORKDIR /app
-# Copia package.json e package-lock.json para instalar dependências
+
+# Cache de dependências
 COPY package.json package-lock.json ./
 RUN npm install
-# Copia o restante do código
+
 COPY . .
-# Gera o build de produção do Next.js
-# Variáveis de ambiente de build (como NEXT_PUBLIC_...) devem ser passadas aqui
+
+# Desabilita telemetria durante o build
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# IMPORTANTE: Para usar o standalone, seu next.config.js 
+# deve ter: output: 'standalone'
 RUN npm run build
+
 # --- STAGE 2: RUNTIME ---
 FROM node:20-alpine AS runner
-# Define o diretório de trabalho
 WORKDIR /app
-# Instala apenas as dependências de produção
-COPY --from=builder /app/package.json /app/package-lock.json ./
-RUN npm install --only=production
-# Copia os arquivos de build e o servidor Next.js
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-# Define a porta fixa para o serviço
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
 ENV PORT 3002
+
+# Criar usuário de sistema para segurança
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Ajuste para a pasta public: Copia apenas se existir
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/.next/static ./.next/static
+
+# Truque para copiar a pasta public apenas se ela existir no builder
+# Isso evita o erro "file does not exist" que quebrou seu deploy
+RUN if [ -d /app/public ]; then cp -r /app/public ./public; fi
+
+# Copia o output standalone (requer a config no next.config.js)
+# Isso já inclui os node_modules necessários, você não precisa copiar a pasta toda
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+USER nextjs
+
 EXPOSE 3002
-# Comando para iniciar a aplicação em modo de produção
-CMD ["npm", "start"]
+
+# No modo standalone, rodamos o server.js diretamente com node, é muito mais rápido
+CMD ["node", "server.js"]
