@@ -7,5 +7,5 @@ export default async function Home() {
   if (data?.claims) {
     redirect("/dashboard/orcamentos");
   }
-  redirect("/auth/login");
+  redirect("/autenticacao/entrar");
 }
