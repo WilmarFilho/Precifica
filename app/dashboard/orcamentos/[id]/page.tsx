@@ -4,77 +4,85 @@ import { redirect } from 'next/navigation';
 import { createClient } from "@/lib/supabase/server";
 import { DashboardHeader } from '@/components/dashboard-header';
 import { GradeOrcamento } from '@/components/orcamento/grade-orcamento';
+import { HistoricoVersoes } from '@/components/orcamento/historico-versoes';
 import { salvarFluxoOrcamento } from "../actions/salvarFluxoOrcamento";
-import { revalidatePath } from 'next/cache';
 
-
-export default async function OrcamentoPage({ params }: { params: { id: string } }) {
+export default async function OrcamentoPage({ 
+  params, 
+  searchParams 
+}: { 
+  params: { id: string }, 
+  searchParams: { v?: string } 
+}) {
   const { id } = await params;
+  const { v: versaoIdSolicitada } = await searchParams;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/autenticacao/entrar');
 
-  const { data: clientes } = await supabase
-    .from('clientes')
-    .select('id, nome')
-    .order('nome');
+  const { data: clientes } = await supabase.from('clientes').select('id, nome').order('nome');
 
-  interface InsumoParaGrade {
-    id: number;
-    nome: string;
-    categoria: string;
-    custo_unitario: number;
-    quantidade_referencia?: number;
-  }
-
-  interface OrcamentoExistente {
-    id: number;
-    titulo: string;
-    cliente_id: string;
-    // Add other fields as needed based on your table structure
-  }
-
-  let insumosParaGrade: InsumoParaGrade[] = [];
-  let orcamentoExistente: OrcamentoExistente | null = null;
+  let insumosParaGrade = [];
+  let orcamentoExistente = null;
+  let versoes = [];
+  let quantidadesIniciais = [1000, 3000, 5000];
 
   if (id === 'novo') {
     const { data: insumosBase } = await supabase.from('insumos_base').select('*').order('categoria');
-    insumosParaGrade = insumosBase?.map(i => ({ ...i, custo_unitario: 0 })) || [];
+    insumosParaGrade = insumosBase?.map(i => ({ ...i, id: String(i.id), custo_unitario: 0 })) || [];
   } else {
+    // 1. Busca Orçamento e todas as versões
     const { data: orc } = await supabase.from('orcamentos').select('*').eq('id', id).single();
-    if (orc) {
-      orcamentoExistente = orc;
+    const { data: vList } = await supabase.from('orcamento_versoes').select('*').eq('orcamento_id', id).order('versao_numero', { ascending: false });
+    
+    orcamentoExistente = orc;
+    versoes = vList || [];
+
+    // 2. Define qual versão carregar (a clicada ou a mais recente)
+    const versaoParaCarregar = versaoIdSolicitada 
+      ? versoes.find(v => v.id === versaoIdSolicitada) 
+      : versoes[0];
+
+      console.log(versaoParaCarregar)
+    if (versaoParaCarregar) {
+        console.log('oi')
       const { data: valores } = await supabase
         .from('orcamento_versao_valores')
         .select('*, insumos_base(nome, categoria)')
-        .eq('orcamento_id', id);
-      
-      insumosParaGrade = valores?.map(v => ({
-        id: v.insumo_id,
-        nome: v.insumos_base.nome,
-        categoria: v.insumos_base.categoria,
-        custo_unitario: v.valor_custo_unitario_base
-      })) || [];
+        .eq('versao_id', versaoParaCarregar.id);
+      console.log(valores)
+      if (valores && valores.length > 0) {
+        quantidadesIniciais = [...new Set(valores.map(val => val.quantidade_referencia))].sort((a, b) => a - b);
+        
+        const uniqueIds = [...new Set(valores.map(val => val.insumo_id))];
+        insumosParaGrade = uniqueIds.map(insId => {
+          const item = valores.find(val => val.insumo_id === insId);
+          return {
+            id: String(insId),
+            nome: item.insumos_base.nome,
+            categoria: item.insumos_base.categoria || 'Geral',
+            custo_unitario: item.valor_custo_unitario_base
+          };
+        });
+
+        console.log(insumosParaGrade);
+      }
     }
   }
 
   async function handleSalvar(formData: FormData) {
     'use server';
     const payload = {
-      titulo: formData.get('titulo') as string,
+      titulo: formData.get('titulo') as string, // Permite alterar o nome
       clienteId: formData.get('clienteId') as string,
       valores: JSON.parse(formData.get('valores') as string),
-      // Só define orcamentoId se orcamentoExistente não for null
-      ...(orcamentoExistente ? { orcamentoId: String(orcamentoExistente.id) } : {}),
       userId: user!.id,
-      markup: Number(formData.get('markup')) || 0,
+      markup: Number(formData.get('markup')),
+      ...(id !== 'novo' ? { orcamentoId: id } : {})
     };
 
-    if (!payload.titulo || !payload.clienteId) return; // Validação extra no servidor
-
     await salvarFluxoOrcamento(payload);
-    revalidatePath('/dashboard/orcamentos');
     redirect('/dashboard/orcamentos');
   }
 
@@ -83,56 +91,47 @@ export default async function OrcamentoPage({ params }: { params: { id: string }
       <DashboardHeader />
       
       <form action={handleSalvar} className="max-w-7xl mx-auto px-6 py-8">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight text-white italic underline decoration-blue-500/30">
-              {id === 'novo' ? 'Novo Projeto' : orcamentoExistente?.titulo}
-            </h1>
-            <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium">Editor de Precificação Gráfica</p>
-          </div>
-          
-          <div className="flex gap-3">
-            <button type="submit" className="px-6 py-2.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-400 font-bold hover:text-white transition shadow-sm text-xs uppercase tracking-tighter">
-              Salvar Rascunho
-            </button>
-            <button type="submit" className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition text-xs uppercase tracking-tighter">
-              Gerar Orçamento Final
-            </button>
-            
-          </div>
-        </header>
-
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10 bg-zinc-900/30 p-6 rounded-2xl border border-zinc-800/50">
-          <div className="lg:col-span-2 space-y-2">
-            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1">Nome do Orçamento</label>
+        <header className="flex justify-between items-center mb-10">
+          <div className="flex-1 mr-8">
+            {/* Input de Título editável */}
             <input 
               name="titulo" 
               defaultValue={orcamentoExistente?.titulo} 
-              placeholder="Ex: 5.000 Panfletos - Campanha Verão" 
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3.5 text-lg focus:ring-2 focus:ring-blue-500/50 outline-none transition placeholder:text-zinc-800 font-medium"
-              required
+              placeholder="Nome do Orçamento..."
+              className="bg-transparent text-3xl font-bold text-white border-b border-transparent focus:border-blue-500 outline-none w-full transition-colors"
+              required 
             />
+            <p className="text-zinc-500 text-[10px] uppercase tracking-widest mt-2">
+              ID: {id === 'novo' ? 'Gerando...' : id}
+            </p>
           </div>
           
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1">Cliente Solicitante</label>
+          <button type="submit" className="px-8 py-4 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition text-xs uppercase flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+            Salvar Nova Versão
+          </button>
+        </header>
+
+        {versoes.length > 0 && <HistoricoVersoes versoes={versoes} />}
+
+        <section className="bg-zinc-900/30 p-6 rounded-2xl border border-zinc-800/50 mb-8">
+           <div className="max-w-xs">
+            <label className="text-[10px] font-bold uppercase text-zinc-500 mb-2 block tracking-widest">Cliente Associado</label>
             <select 
               name="clienteId" 
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none cursor-pointer text-zinc-300 font-medium"
-              defaultValue={orcamentoExistente?.cliente_id || ""}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 outline-none appearance-none cursor-pointer text-sm" 
+              defaultValue={orcamentoExistente?.cliente_id || ""} 
               required
             >
-              <option value="" disabled>Selecione o Cliente...</option>
-              {clientes?.map((c) => (
-                <option key={c.id} value={c.id}>{c.nome}</option>
-              ))}
+              <option value="" disabled>Selecione um cliente...</option>
+              {clientes?.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
             </select>
           </div>
         </section>
 
         <GradeOrcamento 
-          insumosIniciais={insumosParaGrade.map(i => ({ ...i, id: String(i.id) }))} 
-          quantidadesPadrao={id === 'novo' ? [1000, 3000, 5000] : insumosParaGrade.map(i => i.quantidade_referencia).filter((q): q is number => typeof q === 'number')} 
+          insumosIniciais={insumosParaGrade} 
+          quantidadesPadrao={quantidadesIniciais} 
           markupInicial={30}
         />
       </form>

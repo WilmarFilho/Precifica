@@ -4,8 +4,6 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/lib/database.types";
 
-// Tipos extraídos diretamente do seu esquema SQL
-type OrcamentoInsert = Database['public']['Tables']['orcamentos']['Insert'];
 type VersaoInsert = Database['public']['Tables']['orcamento_versoes']['Insert'];
 type ValorInsert = Database['public']['Tables']['orcamento_versao_valores']['Insert'];
 
@@ -26,7 +24,7 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
   const supabase = await createClient();
   let orcamentoId = payload.orcamentoId;
 
-  // 1. Criar ou validar Orçamento
+  // 1. Criar ou Atualizar Orçamento Base
   if (!orcamentoId) {
     const { data: orcamento, error: orcError } = await supabase
       .from("orcamentos")
@@ -34,15 +32,15 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
         cliente_id: payload.clienteId,
         titulo: payload.titulo,
         user_id: payload.userId,
-      } as OrcamentoInsert)
+      })
       .select()
       .single();
 
-    if (orcError || !orcamento) throw new Error(`Erro ao criar orçamento: ${orcError?.message}`);
+    if (orcError || !orcamento) throw new Error("Erro ao criar orçamento");
     orcamentoId = orcamento.id;
   }
 
-  // 2. Determinar Próxima Versão
+  // 2. Incrementar número da versão
   const { data: versoes } = await supabase
     .from("orcamento_versoes")
     .select("versao_numero")
@@ -52,7 +50,7 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 
   const nextVersao = (versoes?.[0]?.versao_numero || 0) + 1;
 
-  // 3. Criar Versão Imutável
+  // 3. Criar a Versão (Histórico)
   const { data: versao, error: vError } = await supabase
     .from("orcamento_versoes")
     .insert({
@@ -63,9 +61,9 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
     .select()
     .single();
 
-  if (vError || !versao) throw new Error(`Erro ao criar versão: ${vError?.message}`);
+  if (vError || !versao) throw new Error("Erro ao criar versão");
 
-  // 4. Inserir Valores Detalhados
+  // 4. Inserir os Valores da Grade
   const valoresInsert: ValorInsert[] = payload.valores.map((v) => ({
     versao_id: versao.id,
     insumo_id: v.insumo_id,

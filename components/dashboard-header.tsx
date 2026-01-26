@@ -8,7 +8,9 @@ export function DashboardHeader() {
       style={{ background: "rgba(255,255,255,0.07)", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}
     >
       {/* Logo */}
-      <div className="font-extrabold text-lg tracking-wide text-white drop-shadow-sm">Precifica</div>
+      <Link href="/dashboard/orcamentos" className="font-extrabold text-lg tracking-wide text-white drop-shadow-sm focus:outline-none uppercase">
+        Precifica
+      </Link>
 
       {/* Menu */}
       <nav className="flex gap-8">
