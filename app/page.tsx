@@ -9,3 +9,5 @@ export default async function Home() {
   }
   redirect("/autenticacao/entrar");
 }
+
+//console.log('')
