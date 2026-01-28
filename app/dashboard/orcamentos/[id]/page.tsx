@@ -20,6 +20,14 @@ export default async function OrcamentoPage({
     const { v: versaoIdSolicitada } = await searchParams;
     const supabase = await createClient();
 
+    // 1. Busca os tipos de papel para a calculadora (DADOS NOVOS)
+    const { data: tiposPapel } = await supabase
+        .from('tipos_papel')
+        .select('*')
+        .order('nome');
+
+        console.log(tiposPapel);
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect('/autenticacao/entrar');
 
@@ -168,11 +176,12 @@ export default async function OrcamentoPage({
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
-                            Gerar Nova Versão de Custos
+                            Salvar
                         </button>
                     </div>
 
                     <GradeOrcamento
+                        tiposPapel={tiposPapel || []}
                         insumosIniciais={insumosParaGrade}
                         quantidadesPadrao={quantidadesIniciais}
                         markupInicial={30}
@@ -182,3 +191,4 @@ export default async function OrcamentoPage({
         </div>
     );
 }
+

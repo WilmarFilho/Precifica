@@ -1,0 +1,3276 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.github/workflows/deploy.yml
+.gitignore
+app/autenticacao/cadastrar/page.tsx
+app/autenticacao/cadastro-sucesso/page.tsx
+app/autenticacao/confirmar/route.ts
+app/autenticacao/entrar/page.tsx
+app/autenticacao/erro/page.tsx
+app/autenticacao/esqueci-senha/page.tsx
+app/autenticacao/redefinir-senha/page.tsx
+app/dashboard/clientes/actions/cadastrarCliente.ts
+app/dashboard/clientes/actions/listarClientes.ts
+app/dashboard/clientes/page.tsx
+app/dashboard/orcamentos/[id]/page.tsx
+app/dashboard/orcamentos/actions/atualizarTitulo.ts
+app/dashboard/orcamentos/actions/salvarFluxoOrcamento.ts
+app/dashboard/orcamentos/page.tsx
+app/globals.css
+app/layout.tsx
+app/page.tsx
+components.json
+components/buttons/logout-button.tsx
+components/dashboard-header.tsx
+components/forms/forgot-password-form.tsx
+components/forms/login-form.tsx
+components/forms/sign-up-form.tsx
+components/forms/update-password-form.tsx
+components/modal/novo-cliente-modal.tsx
+components/orcamento/grade-orcamento.tsx
+components/orcamento/historico-versoes.tsx
+components/ui/badge.tsx
+components/ui/button.tsx
+components/ui/card.tsx
+components/ui/checkbox.tsx
+components/ui/dialog.tsx
+components/ui/dropdown-menu.tsx
+components/ui/input.tsx
+components/ui/label.tsx
+docker-compose.yml
+Dockerfile
+eslint.config.mjs
+lib/database.types.ts
+lib/supabase/client.ts
+lib/supabase/proxy.ts
+lib/supabase/server.ts
+lib/utils.ts
+next.config.ts
+package.json
+postcss.config.mjs
+proxy.ts
+README.md
+tailwind.config.ts
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".github/workflows/deploy.yml">
+name: Deploy Precifica
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # 1. Entrar na pasta do projeto
+            mkdir -p ~/Precifica
+            cd ~/Precifica
+            
+            # 2. Sincronizar com o commit atual
+            if [ ! -d ".git" ]; then
+              echo "Repositório não encontrado localmente. Clonando..."
+              find . -mindepth 1 -delete
+              git clone https://github.com/WilmarFilho/Precifica.git .
+            else
+              echo "Sincronizando repositório existente..."
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
+            # 3. Docker Compose (Sempre com hífen conforme solicitado)
+            # Nota: Certifique-se de ter o Alias ou a versão V1 instalada na VPS
+            docker-compose down
+            docker-compose up -d --build
+
+            # 4. Limpeza de imagens antigas para poupar espaço
+            docker image prune -f
+</file>
+
+<file path="app/autenticacao/cadastro-sucesso/page.tsx">
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+export default function PaginaCadastroSucesso() {
+  return (
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">
+                Cadastro realizado com sucesso!
+              </CardTitle>
+              <CardDescription>Confira seu e-mail para confirmar</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Sua conta foi criada. Por favor, confirme seu cadastro pelo e-mail antes de acessar.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/autenticacao/confirmar/route.ts">
+import { createClient } from "@/lib/supabase/server";
+import { type EmailOtpType } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
+import { type NextRequest } from "next/server";
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const token_hash = searchParams.get("token_hash");
+  const type = searchParams.get("type") as EmailOtpType | null;
+  const next = searchParams.get("next") ?? "/";
+
+  if (token_hash && type) {
+    const supabase = await createClient();
+
+    const { error } = await supabase.auth.verifyOtp({
+      type,
+      token_hash,
+    });
+    if (!error) {
+      // redireciona usuário para a URL especificada ou para a raiz
+      redirect(next);
+    } else {
+      // redireciona para página de erro com instruções
+      redirect(`/autenticacao/erro?error=${error?.message}`);
+    }
+  }
+
+  // redireciona para página de erro com instruções
+  redirect(`/autenticacao/erro?error=No token hash or type`);
+}
+</file>
+
+<file path="app/autenticacao/erro/page.tsx">
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Suspense } from "react";
+
+async function ConteudoErro({
+  searchParams,
+}: {
+  searchParams: Promise<{ error: string }>;
+}) {
+  const params = await searchParams;
+
+  return (
+    <>
+      {params?.error ? (
+        <p className="text-sm text-muted-foreground">
+          Erro: {params.error}
+        </p>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Ocorreu um erro não especificado.
+        </p>
+      )}
+    </>
+  );
+}
+
+export default function PaginaErro({
+  searchParams,
+}: {
+  searchParams: Promise<{ error: string }>;
+}) {
+  return (
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">
+                Ocorreu um erro
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Suspense>
+                <ConteudoErro searchParams={searchParams} />
+              </Suspense>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/dashboard/clientes/actions/cadastrarCliente.ts">
+"use server";
+
+import { z } from "zod";
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+
+const schema = z.object({
+  nome: z.string().min(2),
+});
+
+export async function cadastrarCliente(formData: FormData) {
+  const data = Object.fromEntries(formData.entries());
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors.nome?.[0] || "Dados inválidos" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("clientes").insert({
+    nome: parsed.data.nome,
+    // O Supabase RLS deve garantir o auth.uid() automaticamente
+  });
+  if (error) {
+    return { error: error.message };
+  }
+  revalidatePath("/dashboard/clientes");
+  return { success: true };
+}
+</file>
+
+<file path="app/dashboard/clientes/actions/listarClientes.ts">
+import { createClient } from "@/lib/supabase/server";
+import { Database } from "@/lib/database.types";
+
+export async function listarClientes(busca: string = "") {
+  const supabase = await createClient();
+  let query = supabase.from("clientes").select("id, nome, created_at").order("created_at", { ascending: false });
+  if (busca) {
+    query = query.ilike("nome", `%${busca}%`);
+  }
+  const { data, error } = await query;
+  if (error) return [];
+  return data as Pick<Database["public"]["Tables"]["clientes"]["Row"], "id" | "nome" | "created_at">[];
+}
+</file>
+
+<file path="app/dashboard/orcamentos/actions/atualizarTitulo.ts">
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+
+export async function atualizarTituloOrcamento(id: string, novoTitulo: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("orcamentos")
+    .update({ titulo: novoTitulo })
+    .eq("id", id);
+
+  if (error) throw new Error("Erro ao atualizar título");
+
+  revalidatePath(`/dashboard/orcamentos/${id}`);
+  return { ok: true };
+}
+</file>
+
+<file path="components.json">
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "iconLibrary": "lucide"
+}
+</file>
+
+<file path="components/buttons/logout-button.tsx">
+"use client";
+
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+
+export function LogoutButton() {
+  const router = useRouter();
+
+  const logout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/autenticacao/entrar");
+  };
+
+  return <Button onClick={logout}>Logout</Button>;
+}
+</file>
+
+<file path="components/forms/forgot-password-form.tsx">
+"use client";
+
+import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { useState } from "react";
+
+export function ForgotPasswordForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const supabase = createClient();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // The url which will be included in the email. This URL needs to be configured in your redirect URLs in the Supabase dashboard at https://supabase.com/dashboard/project/_/auth/url-configuration
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/update-password`,
+      });
+      if (error) throw error;
+      setSuccess(true);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+      {success ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Check Your Email</CardTitle>
+            <CardDescription>Password reset instructions sent</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              If you registered using your email and password, you will receive
+              a password reset email.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Redefinir senha</CardTitle>
+            <CardDescription>
+              Informe seu e-mail e enviaremos um link para redefinir sua senha
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleForgotPassword}>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                {error && <p className="text-sm text-red-500">{error}</p>}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Enviando..." : "Enviar e-mail de redefinição"}
+                </Button>
+              </div>
+              <div className="mt-4 text-center text-sm">
+                Já possui uma conta?{" "}
+                <Link
+                  href="/autenticacao/entrar"
+                  className="underline underline-offset-4"
+                >
+                  Entrar
+                </Link>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="components/forms/login-form.tsx">
+"use client";
+
+import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+export function LoginForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const supabase = createClient();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      // Update this route to redirect to an authenticated route. The user already has an active session.
+      router.push("/dashboard/orcamentos");
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Entrar</CardTitle>
+          <CardDescription>
+            Informe seu e-mail para acessar sua conta
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin}>
+            <div className="flex flex-col gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Senha</Label>
+                  <Link
+                    href="/autenticacao/esqueci-senha"
+                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                  >
+                    Esqueceu a senha?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              {error && <p className="text-sm text-red-500">{error}</p>}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Entrando..." : "Entrar"}
+              </Button>
+            </div>
+            <div className="mt-4 text-center text-sm">
+              Não possui uma conta?{" "}
+              <Link
+                href="/autenticacao/cadastrar"
+                className="underline underline-offset-4"
+              >
+                Sign up
+              </Link>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+</file>
+
+<file path="components/forms/sign-up-form.tsx">
+"use client";
+
+import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+export function SignUpForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const supabase = createClient();
+    setIsLoading(true);
+    setError(null);
+
+    if (password !== repeatPassword) {
+        setError("As senhas não coincidem");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/protected`,
+        },
+      });
+      if (error) throw error;
+        router.push("/autenticacao/cadastro-sucesso");
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <Card>
+        <CardHeader>
+            <CardTitle className="text-2xl">Cadastrar</CardTitle>
+            <CardDescription>Crie uma nova conta</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSignUp}>
+            <div className="flex flex-col gap-6">
+              <div className="grid gap-2">
+                  <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Password</Label>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="repeat-password">Repeat Password</Label>
+                </div>
+                <Input
+                  id="repeat-password"
+                  type="password"
+                  required
+                  value={repeatPassword}
+                  onChange={(e) => setRepeatPassword(e.target.value)}
+                />
+              </div>
+              {error && <p className="text-sm text-red-500">{error}</p>}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Creating an account..." : "Sign up"}
+              </Button>
+            </div>
+              <div className="mt-4 text-center text-sm">
+                Já possui uma conta?{" "}
+                <Link
+                  href="/autenticacao/entrar"
+                  className="underline underline-offset-4"
+                >
+                  Entrar
+                </Link>
+              </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+</file>
+
+<file path="components/forms/update-password-form.tsx">
+"use client";
+
+import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+export function UpdatePasswordForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const supabase = createClient();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      // Update this route to redirect to an authenticated route. The user already has an active session.
+      router.push("/protected");
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Redefinir senha</CardTitle>
+          <CardDescription>
+            Informe sua nova senha abaixo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleForgotPassword}>
+            <div className="flex flex-col gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="password">Nova senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Nova senha"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              {error && <p className="text-sm text-red-500">{error}</p>}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Salvando..." : "Salvar nova senha"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+</file>
+
+<file path="components/modal/novo-cliente-modal.tsx">
+'use client';
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, UserPlus, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+
+export function NovoClienteModal() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [nome, setNome] = useState('');
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { error } = await supabase
+      .from('clientes')
+      .insert([{ nome, user_id: user?.id }]);
+
+    if (!error) {
+      setNome('');
+      setIsOpen(false);
+      router.refresh();
+    }
+    setLoading(false);
+  };
+
+  return (
+    <>
+      <button 
+        onClick={() => setIsOpen(true)}
+        className="w-full md:w-auto whitespace-nowrap bg-blue-600 text-white font-bold px-6 py-3.5 rounded-xl shadow-lg shadow-blue-900/20 hover:bg-blue-500 transition uppercase text-xs flex items-center justify-center gap-2"
+      >
+        <UserPlus size={16} />
+        Novo Cliente
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            {/* Overlay */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+
+            {/* Modal Card */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">Novo Cliente</h2>
+                  <button onClick={() => setIsOpen(false)} className="text-zinc-500 hover:text-white transition">
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500 mb-2 block tracking-widest">
+                      Nome Completo ou Razão Social
+                    </label>
+                    <input 
+                      autoFocus
+                      required
+                      type="text" 
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      placeholder="Ex: Gráfica Premium LTDA"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-white outline-none focus:ring-2 focus:ring-blue-500/50 transition placeholder:text-zinc-700"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button 
+                      type="button"
+                      onClick={() => setIsOpen(false)}
+                      className="flex-1 px-6 py-4 rounded-2xl bg-zinc-800 text-white font-bold text-xs uppercase hover:bg-zinc-700 transition"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      type="submit"
+                      disabled={loading}
+                      className="flex-[2] px-6 py-4 rounded-2xl bg-blue-600 text-white font-black text-xs uppercase hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {loading ? <Loader2 className="animate-spin" size={16} /> : "Cadastrar Cliente"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+</file>
+
+<file path="components/ui/badge.tsx">
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const badgeVariants = cva(
+  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
+        outline: "text-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {}
+
+function Badge({ className, variant, ...props }: BadgeProps) {
+  return (
+    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+  );
+}
+
+export { Badge, badgeVariants };
+</file>
+
+<file path="components/ui/button.tsx">
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  },
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  },
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
+</file>
+
+<file path="components/ui/card.tsx">
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-xl border bg-card text-card-foreground shadow",
+      className,
+    )}
+    {...props}
+  />
+));
+Card.displayName = "Card";
+
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
+));
+CardHeader.displayName = "CardHeader";
+
+const CardTitle = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("font-semibold leading-none tracking-tight", className)}
+    {...props}
+  />
+));
+CardTitle.displayName = "CardTitle";
+
+const CardDescription = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+));
+CardDescription.displayName = "CardDescription";
+
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+));
+CardContent.displayName = "CardContent";
+
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
+    {...props}
+  />
+));
+CardFooter.displayName = "CardFooter";
+
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardContent,
+};
+</file>
+
+<file path="components/ui/checkbox.tsx">
+"use client";
+
+import * as React from "react";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { Check } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <CheckboxPrimitive.Root
+    ref={ref}
+    className={cn(
+      "peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+      className,
+    )}
+    {...props}
+  >
+    <CheckboxPrimitive.Indicator
+      className={cn("flex items-center justify-center text-current")}
+    >
+      <Check className="h-4 w-4" />
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+));
+Checkbox.displayName = CheckboxPrimitive.Root.displayName;
+
+export { Checkbox };
+</file>
+
+<file path="components/ui/dialog.tsx">
+import * as React from "react";
+import { Dialog as DialogPrimitive, DialogContent as DialogContentPrimitive } from "@radix-ui/react-dialog";
+
+export const Dialog = DialogPrimitive;
+export const DialogContent = DialogContentPrimitive;
+
+export function DialogHeader({ children, className }: React.HTMLAttributes<HTMLDivElement>) {
+	return (
+		<div className={"flex flex-col space-y-1.5 p-6 " + (className ?? "")}>{children}</div>
+	);
+}
+
+export function DialogTitle({ children, className }: React.HTMLAttributes<HTMLHeadingElement>) {
+	return (
+		<h2 className={"text-lg font-semibold leading-none tracking-tight " + (className ?? "")}>{children}</h2>
+	);
+}
+</file>
+
+<file path="components/ui/dropdown-menu.tsx">
+"use client";
+
+import * as React from "react";
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+import { Check, ChevronRight, Circle } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+const DropdownMenu = DropdownMenuPrimitive.Root;
+
+const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
+
+const DropdownMenuGroup = DropdownMenuPrimitive.Group;
+
+const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
+
+const DropdownMenuSub = DropdownMenuPrimitive.Sub;
+
+const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
+
+const DropdownMenuSubTrigger = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.SubTrigger>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubTrigger> & {
+    inset?: boolean;
+  }
+>(({ className, inset, children, ...props }, ref) => (
+  <DropdownMenuPrimitive.SubTrigger
+    ref={ref}
+    className={cn(
+      "flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      inset && "pl-8",
+      className,
+    )}
+    {...props}
+  >
+    {children}
+    <ChevronRight className="ml-auto" />
+  </DropdownMenuPrimitive.SubTrigger>
+));
+DropdownMenuSubTrigger.displayName =
+  DropdownMenuPrimitive.SubTrigger.displayName;
+
+const DropdownMenuSubContent = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
+>(({ className, ...props }, ref) => (
+  <DropdownMenuPrimitive.SubContent
+    ref={ref}
+    className={cn(
+      "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-dropdown-menu-content-transform-origin]",
+      className,
+    )}
+    {...props}
+  />
+));
+DropdownMenuSubContent.displayName =
+  DropdownMenuPrimitive.SubContent.displayName;
+
+const DropdownMenuContent = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Content
+      ref={ref}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-dropdown-menu-content-transform-origin]",
+        className,
+      )}
+      {...props}
+    />
+  </DropdownMenuPrimitive.Portal>
+));
+DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
+
+const DropdownMenuItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
+    inset?: boolean;
+  }
+>(({ className, inset, ...props }, ref) => (
+  <DropdownMenuPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0",
+      inset && "pl-8",
+      className,
+    )}
+    {...props}
+  />
+));
+DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName;
+
+const DropdownMenuCheckboxItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.CheckboxItem>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>
+>(({ className, children, checked, ...props }, ref) => (
+  <DropdownMenuPrimitive.CheckboxItem
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className,
+    )}
+    checked={checked}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <DropdownMenuPrimitive.ItemIndicator>
+        <Check className="h-4 w-4" />
+      </DropdownMenuPrimitive.ItemIndicator>
+    </span>
+    {children}
+  </DropdownMenuPrimitive.CheckboxItem>
+));
+DropdownMenuCheckboxItem.displayName =
+  DropdownMenuPrimitive.CheckboxItem.displayName;
+
+const DropdownMenuRadioItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.RadioItem>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
+>(({ className, children, ...props }, ref) => (
+  <DropdownMenuPrimitive.RadioItem
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className,
+    )}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <DropdownMenuPrimitive.ItemIndicator>
+        <Circle className="h-2 w-2 fill-current" />
+      </DropdownMenuPrimitive.ItemIndicator>
+    </span>
+    {children}
+  </DropdownMenuPrimitive.RadioItem>
+));
+DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;
+
+const DropdownMenuLabel = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Label> & {
+    inset?: boolean;
+  }
+>(({ className, inset, ...props }, ref) => (
+  <DropdownMenuPrimitive.Label
+    ref={ref}
+    className={cn(
+      "px-2 py-1.5 text-sm font-semibold",
+      inset && "pl-8",
+      className,
+    )}
+    {...props}
+  />
+));
+DropdownMenuLabel.displayName = DropdownMenuPrimitive.Label.displayName;
+
+const DropdownMenuSeparator = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <DropdownMenuPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 my-1 h-px bg-muted", className)}
+    {...props}
+  />
+));
+DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName;
+
+const DropdownMenuShortcut = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLSpanElement>) => {
+  return (
+    <span
+      className={cn("ml-auto text-xs tracking-widest opacity-60", className)}
+      {...props}
+    />
+  );
+};
+DropdownMenuShortcut.displayName = "DropdownMenuShortcut";
+
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup,
+};
+</file>
+
+<file path="components/ui/input.tsx">
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          className,
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  },
+);
+Input.displayName = "Input";
+
+export { Input };
+</file>
+
+<file path="components/ui/label.tsx">
+"use client";
+
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+);
+
+const Label = React.forwardRef<
+  React.ElementRef<typeof LabelPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
+    VariantProps<typeof labelVariants>
+>(({ className, ...props }, ref) => (
+  <LabelPrimitive.Root
+    ref={ref}
+    className={cn(labelVariants(), className)}
+    {...props}
+  />
+));
+Label.displayName = LabelPrimitive.Root.displayName;
+
+export { Label };
+</file>
+
+<file path="eslint.config.mjs">
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { FlatCompat } from "@eslint/eslintrc";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
+
+const eslintConfig = [
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+];
+
+export default eslintConfig;
+</file>
+
+<file path="lib/database.types.ts">
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
+  public: {
+    Tables: {
+      clientes: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          nome: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      insumos_base: {
+        Row: {
+          categoria: string | null
+          created_at: string | null
+          id: string
+          nome: string
+          unidade_medida: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string | null
+          id?: string
+          nome: string
+          unidade_medida?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string | null
+          id?: string
+          nome?: string
+          unidade_medida?: string | null
+        }
+        Relationships: []
+      }
+      orcamento_versao_valores: {
+        Row: {
+          id: string
+          insumo_id: string
+          quantidade_referencia: number | null
+          valor_custo_unitario_base: number
+          versao_id: string
+        }
+        Insert: {
+          id?: string
+          insumo_id: string
+          quantidade_referencia?: number | null
+          valor_custo_unitario_base: number
+          versao_id: string
+        }
+        Update: {
+          id?: string
+          insumo_id?: string
+          quantidade_referencia?: number | null
+          valor_custo_unitario_base?: number
+          versao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_versao_valores_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos_base"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_versao_valores_versao_id_fkey"
+            columns: ["versao_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_versoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_versoes: {
+        Row: {
+          created_at: string | null
+          custo_total_calculado: number | null
+          descricao_alteracao: string | null
+          id: string
+          orcamento_id: string
+          versao_numero: number
+        }
+        Insert: {
+          created_at?: string | null
+          custo_total_calculado?: number | null
+          descricao_alteracao?: string | null
+          id?: string
+          orcamento_id: string
+          versao_numero: number
+        }
+        Update: {
+          created_at?: string | null
+          custo_total_calculado?: number | null
+          descricao_alteracao?: string | null
+          id?: string
+          orcamento_id?: string
+          versao_numero?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_versoes_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamentos: {
+        Row: {
+          cliente_id: string
+          created_at: string | null
+          id: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string | null
+          id?: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string | null
+          id?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
+</file>
+
+<file path="lib/supabase/client.ts">
+import { createBrowserClient } from "@supabase/ssr";
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+  );
+}
+</file>
+
+<file path="lib/supabase/proxy.ts">
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+import { hasEnvVars } from "../utils";
+
+export async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
+
+  // If the env vars are not set, skip proxy check. You can remove this
+  // once you setup the project.
+  if (!hasEnvVars) {
+    return supabaseResponse;
+  }
+
+  // With Fluid compute, don't put this client in a global environment
+  // variable. Always create a new one on each request.
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
+          supabaseResponse = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
+  // Do not run code between createServerClient and
+  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
+  // issues with users being randomly logged out.
+
+  // IMPORTANT: If you remove getClaims() and you use server-side rendering
+  // with the Supabase client, your users may be randomly logged out.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
+
+  if (
+    request.nextUrl.pathname !== "/" &&
+    !user &&
+    !request.nextUrl.pathname.startsWith("/login") &&
+    !request.nextUrl.pathname.startsWith("/auth")
+  ) {
+    // no user, potentially respond by redirecting the user to the login page
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/login";
+    return NextResponse.redirect(url);
+  }
+
+  // IMPORTANT: You *must* return the supabaseResponse object as it is.
+  // If you're creating a new response object with NextResponse.next() make sure to:
+  // 1. Pass the request in it, like so:
+  //    const myNewResponse = NextResponse.next({ request })
+  // 2. Copy over the cookies, like so:
+  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
+  // 3. Change the myNewResponse object to fit your needs, but avoid changing
+  //    the cookies!
+  // 4. Finally:
+  //    return myNewResponse
+  // If this is not done, you may be causing the browser and server to go out
+  // of sync and terminate the user's session prematurely!
+
+  return supabaseResponse;
+}
+</file>
+
+<file path="lib/supabase/server.ts">
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+/**
+ * Especially important if using Fluid compute: Don't put this client in a
+ * global variable. Always create a new client within each function when using
+ * it.
+ */
+export async function createClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have proxy refreshing
+            // user sessions.
+          }
+        },
+      },
+    },
+  );
+}
+</file>
+
+<file path="lib/utils.ts">
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+// This check can be removed, it is just for tutorial purposes
+export const hasEnvVars =
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+</file>
+
+<file path="postcss.config.mjs">
+/** @type {import('postcss-load-config').Config} */
+const config = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="README.md">
+<a href="https://demo-nextjs-with-supabase.vercel.app/">
+  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
+  <h1 align="center">Next.js and Supabase Starter Kit</h1>
+</a>
+
+<p align="center">
+ The fastest way to build apps with Next.js and Supabase
+</p>
+
+<p align="center">
+  <a href="#features"><strong>Features</strong></a> ·
+  <a href="#demo"><strong>Demo</strong></a> ·
+  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
+  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
+  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
+  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
+</p>
+<br/>
+
+## Features
+
+- Works across the entire [Next.js](https://nextjs.org) stack
+  - App Router
+  - Pages Router
+  - Proxy
+  - Client
+  - Server
+  - It just works!
+- supabase-ssr. A package to configure Supabase Auth to use cookies
+- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
+- Styling with [Tailwind CSS](https://tailwindcss.com)
+- Components with [shadcn/ui](https://ui.shadcn.com/)
+- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
+  - Environment variables automatically assigned to Vercel project
+
+## Demo
+
+You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+
+## Deploy to Vercel
+
+Vercel deployment will guide you through creating a Supabase account and project.
+
+After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+
+The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+
+If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+
+## Clone and run locally
+
+1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+
+2. Create a Next.js app using the Supabase Starter template npx command
+
+   ```bash
+   npx create-next-app --example with-supabase with-supabase-app
+   ```
+
+   ```bash
+   yarn create next-app --example with-supabase with-supabase-app
+   ```
+
+   ```bash
+   pnpm create next-app --example with-supabase with-supabase-app
+   ```
+
+3. Use `cd` to change into the app's directory
+
+   ```bash
+   cd with-supabase-app
+   ```
+
+4. Rename `.env.example` to `.env.local` and update the following:
+
+  ```env
+  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
+  ```
+  > [!NOTE]
+  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
+  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
+  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+
+  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+
+5. You can now run the Next.js local development server:
+
+   ```bash
+   npm run dev
+   ```
+
+   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+
+6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+
+> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+
+## Feedback and issues
+
+Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+
+## More Supabase examples
+
+- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
+- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
+- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+
+.ssh
+</file>
+
+<file path="app/autenticacao/cadastrar/page.tsx">
+import { SignUpForm } from "@/components/forms/sign-up-form";
+
+export default function PaginaCadastro() {
+  return (
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-sm">
+        <SignUpForm />
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/autenticacao/entrar/page.tsx">
+import { LoginForm } from "@/components/forms/login-form";
+
+export default function PaginaEntrar() {
+  return (
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-sm">
+        <LoginForm />
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/autenticacao/esqueci-senha/page.tsx">
+import { ForgotPasswordForm } from "@/components/forms/forgot-password-form";
+
+export default function PaginaEsqueciSenha() {
+  return (
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-sm">
+        <ForgotPasswordForm />
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/autenticacao/redefinir-senha/page.tsx">
+import { UpdatePasswordForm } from "@/components/forms/update-password-form";
+
+export default function PaginaRedefinirSenha() {
+  return (
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-sm">
+        <UpdatePasswordForm />
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/globals.css">
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'Poppins', sans-serif;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+</file>
+
+<file path="components/orcamento/grade-orcamento.tsx">
+'use client';
+
+import React, { useState, useMemo, useEffect } from 'react';
+
+interface Insumo {
+  id: string;
+  nome: string;
+  categoria: string;
+  custo_unitario: number;
+}
+
+interface GradeOrcamentoProps {
+  insumosIniciais: Insumo[];
+  quantidadesPadrao: number[];
+  markupInicial: number;
+}
+
+export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInicial }: GradeOrcamentoProps) {
+  // Estados internos
+  const [quantidades, setQuantidades] = useState<number[]>(quantidadesPadrao);
+  const [markup, setMarkup] = useState<number>(markupInicial);
+  const [custos, setCustos] = useState<Record<string, number>>({});
+
+  /**
+   * ESTE É O AJUSTE PRINCIPAL:
+   * Sempre que as props vindas do servidor mudarem (ao trocar de versão),
+   * o useEffect reinicia os estados internos do componente.
+   */
+  useEffect(() => {
+    const init: Record<string, number> = {};
+    insumosIniciais.forEach((i) => {
+      init[i.id] = i.custo_unitario || 0;
+    });
+    
+    setCustos(init);
+    setQuantidades(quantidadesPadrao);
+    setMarkup(markupInicial);
+  }, [insumosIniciais, quantidadesPadrao, markupInicial]);
+
+  // Agrupamento de categorias (memoizado para performance)
+  const categorias = useMemo(() => {
+    const groups: Record<string, Insumo[]> = {};
+    insumosIniciais.forEach((i) => {
+      const cat = i.categoria || 'Geral';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(i);
+    });
+    return groups;
+  }, [insumosIniciais]);
+
+  // Cálculos de totais (recalcula sempre que custos ou quantidades mudarem)
+  const totaisCusto = useMemo(() => {
+    return quantidades.map(q => 
+      insumosIniciais.reduce((acc, insumo) => acc + ((custos[insumo.id] || 0) / 100) * q, 0)
+    );
+  }, [custos, quantidades, insumosIniciais]);
+
+  // Prepara os dados para o envio do formulário (Action)
+  const payloadValores = useMemo(() => {
+    return JSON.stringify(
+      quantidades.flatMap(q => 
+        insumosIniciais.map(insumo => ({
+          insumo_id: insumo.id,
+          quantidade_referencia: q,
+          valor_custo_unitario_base: custos[insumo.id] || 0
+        }))
+      )
+    );
+  }, [custos, quantidades, insumosIniciais]);
+
+  return (
+    <div className="space-y-6">
+      {/* Campos ocultos para o FormData da Action */}
+      <input type="hidden" name="valores" value={payloadValores} />
+      <input type="hidden" name="markup" value={markup} />
+
+      {/* Toolbar de Configurações */}
+      <div className="flex justify-between items-center bg-zinc-900/40 p-4 rounded-xl border border-zinc-800">
+        <div className="flex items-center gap-4">
+          <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Markup (%)</label>
+          <input 
+            type="number" 
+            value={markup} 
+            onChange={(e) => setMarkup(Number(e.target.value))}
+            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-1 w-20 text-blue-400 font-bold outline-none focus:border-blue-500 transition"
+          />
+        </div>
+        <button 
+          type="button"
+          onClick={() => setQuantidades([...quantidades, (quantidades[quantidades.length-1] || 0) + 500])}
+          className="text-[10px] bg-blue-600/10 text-blue-500 border border-blue-500/20 px-4 py-2 rounded-lg font-bold hover:bg-blue-600/20 transition uppercase"
+        >
+          + Adicionar Coluna
+        </button>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/50">
+        <table className="w-full text-left text-sm border-collapse">
+          <thead className="bg-zinc-900 text-zinc-500 uppercase text-[10px] font-bold">
+            <tr>
+              <th className="p-4 w-1/4">Insumo</th>
+              <th className="p-4 text-center w-40">Custo Base (100un)</th>
+              {quantidades.map((q, i) => (
+                <th key={i} className="p-4 text-center bg-zinc-800/20">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-[8px] opacity-50">Qtd Ref.</span>
+                    <input 
+                      type="number"
+                      value={q}
+                      onChange={(e) => {
+                        const newQ = [...quantidades];
+                        newQ[i] = Number(e.target.value);
+                        setQuantidades(newQ);
+                      }}
+                      className="bg-transparent border-b border-zinc-700 w-16 text-center text-zinc-300 focus:border-blue-500 outline-none font-mono"
+                    />
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-800/50">
+            {Object.entries(categorias).map(([cat, items]) => (
+              <React.Fragment key={cat}>
+                <tr className="bg-zinc-800/30">
+                  <td colSpan={2 + quantidades.length} className="px-4 py-1.5 text-[9px] font-bold text-blue-400 uppercase tracking-widest border-y border-zinc-800">
+                    {cat}
+                  </td>
+                </tr>
+                {items.map(item => (
+                  <tr key={item.id} className="hover:bg-zinc-800/10 transition group">
+                    <td className="p-4 text-zinc-300 group-hover:text-white font-medium">{item.nome}</td>
+                    <td className="p-4">
+                      <div className="relative flex items-center">
+                        <span className="absolute left-2 text-zinc-600 text-[10px]">R$</span>
+                        <input 
+                          type="number" 
+                          step="0.01"
+                          value={custos[item.id] ?? 0} 
+                          onChange={(e) => setCustos({...custos, [item.id]: Number(e.target.value)})}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 pl-7 text-right tabular-nums text-zinc-400 focus:text-blue-400 focus:border-blue-500/50 transition outline-none"
+                        />
+                      </div>
+                    </td>
+                    {quantidades.map((q, i) => (
+                      <td key={i} className="p-4 text-center text-zinc-500 tabular-nums border-l border-zinc-800/30 font-mono">
+                        {(( (custos[item.id] || 0) / 100) * q).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </React.Fragment>
+            ))}
+          </tbody>
+          <tfoot className="bg-zinc-900/80 font-bold border-t border-zinc-700 sticky bottom-0">
+            <tr>
+              <td colSpan={2} className="p-4 text-right uppercase text-[10px] text-zinc-500 tracking-widest">Custo de Produção Total</td>
+              {totaisCusto.map((t, i) => (
+                <td key={i} className="p-4 text-center text-zinc-400 border-l border-zinc-800/30 font-mono">
+                  {t.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </td>
+              ))}
+            </tr>
+            <tr className="bg-blue-600/10">
+              <td colSpan={2} className="p-4 text-right uppercase text-[10px] text-blue-500 tracking-widest">Preço Sugerido com Markup</td>
+              {totaisCusto.map((t, i) => (
+                <td key={i} className="p-4 text-center text-lg text-blue-400 border-l border-blue-500/10 font-mono">
+                  {(t * (1 + markup/100)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </td>
+              ))}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="components/orcamento/historico-versoes.tsx">
+'use client';
+
+import { Database } from "@/lib/database.types";
+import { useRouter, useSearchParams } from "next/navigation";
+
+type Versao = Database['public']['Tables']['orcamento_versoes']['Row'];
+
+export function HistoricoVersoes({ versoes }: { versoes: Versao[] }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // A versão selecionada vem da URL (?v=...), se não houver, a primeira (mais recente) é a ativa
+  const versaoAtivaId = searchParams.get('v') || versoes[0]?.id;
+
+  const handleTrocarVersao = (versaoId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('v', versaoId);
+    router.push(`?${params.toString()}`);
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2 mb-6">
+      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest w-full mb-1">
+        Histórico de Versões (Clique para visualizar)
+      </p>
+      {versoes.map((v) => {
+        const isSelected = v.id === versaoAtivaId;
+        return (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => handleTrocarVersao(v.id)}
+            className={`px-3 py-1.5 rounded-lg border transition flex items-center gap-2 ${
+              isSelected 
+                ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20" 
+                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600"
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-blue-500"}`}></span>
+            <span className="text-xs font-bold font-mono">v{v.versao_numero}</span>
+            <span className={`text-[9px] ${isSelected ? "text-blue-100" : "text-zinc-600"}`}>
+              {new Date(v.created_at!).toLocaleDateString('pt-BR')}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+</file>
+
+<file path="docker-compose.yml">
+services:
+  precifica-app:
+    # Nome do serviço
+    container_name: precifica-app
+    # Indica que a imagem deve ser construída a partir do Dockerfile no diretório atual:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Mapeamento de portas: 3002 da máquina host para 3002 do container
+    # A porta 3002 é a porta fixa definida para o serviço.
+    ports:
+      - "3002:3002"
+    # Reinicia o container se ele falhar
+    restart: always
+    # Carrega variáveis de ambiente do arquivo .env (local)
+    env_file:
+      - .env
+</file>
+
+<file path="Dockerfile">
+# --- STAGE 1: BUILD ---
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Cache de dependências
+COPY package.json package-lock.json ./
+RUN npm install
+
+COPY . .
+
+# Desabilita telemetria durante o build
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# IMPORTANTE: Para usar o standalone, seu next.config.js 
+# deve ter: output: 'standalone'
+RUN npm run build
+
+# --- STAGE 2: RUNTIME ---
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV PORT 3002
+
+# Criar usuário de sistema para segurança
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Ajuste para a pasta public: Copia apenas se existir
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/.next/static ./.next/static
+
+# Truque para copiar a pasta public apenas se ela existir no builder
+# Isso evita o erro "file does not exist" que quebrou seu deploy
+RUN if [ -d /app/public ]; then cp -r /app/public ./public; fi
+
+# Copia o output standalone (requer a config no next.config.js)
+# Isso já inclui os node_modules necessários, você não precisa copiar a pasta toda
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+USER nextjs
+
+EXPOSE 3002
+
+# No modo standalone, rodamos o server.js diretamente com node, é muito mais rápido
+CMD ["node", "server.js"]
+</file>
+
+<file path="proxy.ts">
+import { updateSession } from "@/lib/supabase/proxy";
+import { type NextRequest } from "next/server";
+
+export async function proxy(request: NextRequest) {
+  return await updateSession(request);
+}
+
+export const config = {
+  matcher: [
+    // Protege apenas rotas /dashboard (e subrotas)
+    "/dashboard/:path*",
+  ],
+};
+</file>
+
+<file path="tailwind.config.ts">
+import type { Config } from "tailwindcss";
+
+export default {
+  darkMode: "class",
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ["Poppins", "sans-serif"],
+      },
+      colors: {
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        chart: {
+          "1": "hsl(var(--chart-1))",
+          "2": "hsl(var(--chart-2))",
+          "3": "hsl(var(--chart-3))",
+          "4": "hsl(var(--chart-4))",
+          "5": "hsl(var(--chart-5))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+} satisfies Config;
+</file>
+
+<file path="app/dashboard/orcamentos/actions/salvarFluxoOrcamento.ts">
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { Database } from "@/lib/database.types";
+
+type VersaoInsert = Database['public']['Tables']['orcamento_versoes']['Insert'];
+type ValorInsert = Database['public']['Tables']['orcamento_versao_valores']['Insert'];
+
+interface FluxoOrcamentoPayload {
+  orcamentoId?: string;
+  clienteId: string;
+  titulo: string; // Usado apenas na criação do primeiro registro
+  userId: string;
+  markup: number;
+  valores: Array<{
+    insumo_id: string;
+    quantidade_referencia: number;
+    valor_custo_unitario_base: number;
+  }>;
+}
+
+export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
+  const supabase = await createClient();
+  let orcamentoId = payload.orcamentoId;
+
+  // 1. Criar Orçamento Base (Apenas se for novo)
+  if (!orcamentoId) {
+    const { data: orcamento, error: orcError } = await supabase
+      .from("orcamentos")
+      .insert({
+        cliente_id: payload.clienteId,
+        titulo: payload.titulo,
+        user_id: payload.userId,
+      })
+      .select().single();
+
+    if (orcError || !orcamento) throw new Error("Erro ao criar orçamento");
+    orcamentoId = orcamento.id;
+  }
+
+  // 2. Incrementar número da versão
+  const { data: versoes } = await supabase
+    .from("orcamento_versoes")
+    .select("versao_numero")
+    .eq("orcamento_id", orcamentoId)
+    .order("versao_numero", { ascending: false })
+    .limit(1);
+
+  const nextVersao = (versoes?.[0]?.versao_numero || 0) + 1;
+
+  // 3. Criar a Versão (Histórico imutável)
+  const { data: versao, error: vError } = await supabase
+    .from("orcamento_versoes")
+    .insert({
+      orcamento_id: orcamentoId,
+      versao_numero: nextVersao,
+      descricao_alteracao: `Cálculo gerado em ${new Date().toLocaleString('pt-BR')}`,
+    } as VersaoInsert)
+    .select().single();
+
+  if (vError || !versao) throw new Error("Erro ao criar versão");
+
+  // 4. Inserir os Valores na Grade
+  const valoresInsert: ValorInsert[] = payload.valores.map((v) => ({
+    versao_id: versao.id,
+    insumo_id: v.insumo_id,
+    quantidade_referencia: v.quantidade_referencia,
+    valor_custo_unitario_base: v.valor_custo_unitario_base,
+  }));
+
+  const { error: valError } = await supabase
+    .from("orcamento_versao_valores")
+    .insert(valoresInsert);
+
+  if (valError) throw new Error(`Erro ao salvar valores: ${valError.message}`);
+
+  revalidatePath(`/dashboard/orcamentos/${orcamentoId}`);
+  return { ok: true, orcamentoId };
+}
+</file>
+
+<file path="components/dashboard-header.tsx">
+'use client';
+
+import { useState } from "react";
+import Link from "next/link";
+import { LogoutButton } from "@/components/buttons/logout-button";
+import { Menu, X } from "lucide-react";
+
+export function DashboardHeader() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const navLinks = [
+    { href: "/dashboard/orcamentos", label: "Orçamentos" },
+    { href: "/dashboard/clientes", label: "Clientes" },
+  ];
+
+  return (
+    // Removido max-w-7xl e mx-auto daqui, pois o pai já controla isso
+    <header className="w-full relative z-50 mb-8">
+      <div 
+        className={`w-full flex items-center justify-between py-4 px-6 md:px-10 transition-all duration-300 ${
+          isMenuOpen ? "rounded-t-3xl border-b-0" : "rounded-full"
+        } border border-white/10 bg-white/5 backdrop-blur-lg shadow-md`}
+        style={{ background: "rgba(255,255,255,0.07)" }}
+      >
+        <Link href="/dashboard/orcamentos" className="font-extrabold text-lg tracking-wide text-white uppercase shrink-0">
+          Precifica
+        </Link>
+
+        <nav className="hidden md:flex gap-8">
+          {navLinks.map((link) => (
+            <Link 
+              key={link.href} 
+              href={link.href} 
+              className="text-white/80 hover:text-white font-medium transition text-sm uppercase tracking-wider"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="hidden md:block">
+          <LogoutButton />
+        </div>
+
+        <button className="md:hidden text-white p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {isMenuOpen && (
+        <div className="md:hidden absolute left-0 right-0 border border-t-0 border-white/10 bg-[#121214] backdrop-blur-xl rounded-b-3xl shadow-xl overflow-hidden">
+          <nav className="flex flex-col p-4 gap-2">
+            {navLinks.map((link) => (
+              <Link 
+                key={link.href} 
+                href={link.href}
+                onClick={() => setIsMenuOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/5 p-4 rounded-xl font-medium transition text-sm uppercase"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="border-t border-white/10 mt-2 pt-4 pb-2 px-4">
+              <LogoutButton />
+            </div>
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+}
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+    output: 'standalone',
+};
+
+export default nextConfig;
+</file>
+
+<file path="app/dashboard/clientes/page.tsx">
+export const dynamic = "force-dynamic";
+
+import { DashboardHeader } from "@/components/dashboard-header";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { NovoClienteModal } from "@/components/modal/novo-cliente-modal";
+
+export default async function ClientesPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
+  const supabase = await createClient();
+
+  // 1. Verificação de Autenticação
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/autenticacao/entrar');
+
+  // 2. Termo de Busca
+  const query = (await searchParams).q || "";
+
+  // 3. Busca no Supabase
+  let dbQuery = supabase
+    .from('clientes')
+    .select('id, nome, created_at')
+    .eq('user_id', user.id)
+    .order('nome', { ascending: true });
+
+  if (query) {
+    dbQuery = dbQuery.ilike('nome', `%${query}%`);
+  }
+
+  const { data: clientes } = await dbQuery;
+
+  return (
+    // CONTÊINER PAI: px-4 md:px-8 para alinhar perfeitamente com a borda externa do Header
+    <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
+      <DashboardHeader />
+        
+      {/* SUB-CONTÊINER: px-2 para alinhar o conteúdo interno com o texto interno do Header */}
+      <div className="px-2">
+        
+        {/* BARRA DE AÇÕES E BUSCA */}
+        <div className="px-8  flex flex-col md:flex-row items-center gap-4 mb-10 w-full mt-10">
+          
+          {/* BOTÃO QUE ABRE O MODAL (Substituindo o Link antigo) */}
+          <NovoClienteModal />
+
+          <form method="GET" className="flex-1 w-full relative">
+            <input
+              type="text"
+              name="q"
+              defaultValue={query}
+              placeholder="Buscar clientes pelo nome..."
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition placeholder:text-zinc-600"
+            />
+            <svg className="w-5 h-5 text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </form>
+        </div>
+
+        {/* GRID DE CLIENTES */}
+        <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {clientes && clientes.length > 0 ? (
+            clientes.map((cliente) => (
+              <div 
+                key={cliente.id} 
+                className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition flex flex-col gap-4 min-h-[160px]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="w-12 h-12 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-500 group-hover:bg-blue-600/20 transition">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-tighter">
+                    ID: {cliente.id.toString().slice(0, 8)}...
+                  </span>
+                </div>
+
+                <div className="flex-1">
+                  <h3 className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1">
+                    {cliente.nome}
+                  </h3>
+                  <p className="text-zinc-500 text-xs">
+                    Cliente desde: {new Date(cliente.created_at).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-zinc-800/50 flex justify-end">
+                  
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-24 border-2 border-dashed border-zinc-800 rounded-3xl">
+              <p className="text-zinc-500 font-medium">Nenhum cliente encontrado.</p>
+              {query && (
+                <Link href="/dashboard/clientes" className="text-blue-500 text-[10px] uppercase font-bold mt-2 inline-block hover:underline tracking-widest">
+                  Limpar busca
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/dashboard/orcamentos/[id]/page.tsx">
+export const dynamic = 'force-dynamic';
+
+import { redirect } from 'next/navigation';
+import { createClient } from "@/lib/supabase/server";
+import { DashboardHeader } from '@/components/dashboard-header';
+import { GradeOrcamento } from '@/components/orcamento/grade-orcamento';
+import { HistoricoVersoes } from '@/components/orcamento/historico-versoes';
+import { salvarFluxoOrcamento } from "../actions/salvarFluxoOrcamento";
+import { atualizarTituloOrcamento } from "@/app/dashboard/orcamentos/actions/atualizarTitulo"; // Certifique-se de criar esta action
+import { revalidatePath } from 'next/cache';
+
+export default async function OrcamentoPage({
+    params,
+    searchParams
+}: {
+    params: { id: string },
+    searchParams: { v?: string }
+}) {
+    const { id } = await params;
+    const { v: versaoIdSolicitada } = await searchParams;
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) redirect('/autenticacao/entrar');
+
+    const { data: clientes } = await supabase.from('clientes').select('id, nome').order('nome');
+
+    let insumosParaGrade = [];
+    let orcamentoExistente: { id: string; titulo: string; cliente_id: string } | null = null;
+    let versoes = [];
+    let quantidadesIniciais = [1000, 3000, 5000];
+
+    if (id === 'novo') {
+        const { data: insumosBase } = await supabase.from('insumos_base').select('*').order('categoria');
+        insumosParaGrade = insumosBase?.map(i => ({ ...i, id: String(i.id), custo_unitario: 0 })) || [];
+    } else {
+        const { data: orc } = await supabase.from('orcamentos').select('*').eq('id', id).single();
+        const { data: vList } = await supabase.from('orcamento_versoes').select('*').eq('orcamento_id', id).order('versao_numero', { ascending: false });
+
+        orcamentoExistente = orc;
+        versoes = vList || [];
+
+        const versaoParaCarregar = versaoIdSolicitada
+            ? versoes.find(v => v.id === versaoIdSolicitada)
+            : versoes[0];
+
+        if (versaoParaCarregar) {
+            const { data: valores } = await supabase
+                .from('orcamento_versao_valores')
+                .select('*, insumos_base(nome, categoria)')
+                .eq('versao_id', versaoParaCarregar.id);
+
+            if (valores && valores.length > 0) {
+                quantidadesIniciais = [...new Set(valores.map(val => val.quantidade_referencia))].sort((a, b) => a - b);
+                const uniqueIds = [...new Set(valores.map(val => val.insumo_id))];
+                insumosParaGrade = uniqueIds.map(insId => {
+                    const item = valores.find(val => val.insumo_id === insId);
+                    return {
+                        id: String(insId),
+                        nome: item.insumos_base.nome,
+                        categoria: item.insumos_base.categoria || 'Geral',
+                        custo_unitario: item.valor_custo_unitario_base
+                    };
+                });
+            }
+        }
+    }
+
+    // ACTION 1: Salvar nova versão (Custos)
+    async function handleSalvarVersao(formData: FormData) {
+        'use server';
+        const payload = {
+            titulo: orcamentoExistente?.titulo || formData.get('titulo_inicial') as string,
+            clienteId: formData.get('clienteId') as string,
+            valores: JSON.parse(formData.get('valores') as string),
+            userId: user!.id,
+            markup: Number(formData.get('markup')),
+            ...(id !== 'novo' ? { orcamentoId: id } : {})
+        };
+
+        await salvarFluxoOrcamento(payload);
+        revalidatePath(`/dashboard/orcamentos/${id}`);
+    }
+
+    // ACTION 2: Apenas atualizar título
+    async function handleUpdateTitle(formData: FormData) {
+        'use server';
+        const novoTitulo = formData.get('titulo') as string;
+        if (id !== 'novo' && novoTitulo) {
+            await atualizarTituloOrcamento(id, novoTitulo);
+        }
+    }
+
+    return (
+        <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
+            <DashboardHeader />
+
+            {/* MENSAGEM PARA TELAS PEQUENAS (Aparece apenas abaixo de 640px/sm) */}
+            <div className="sm:hidden flex flex-col items-center justify-center text-center py-20 px-6 bg-zinc-900/50 rounded-3xl border border-zinc-800 my-8">
+                <div className="w-16 h-16 bg-blue-600/10 rounded-full flex items-center justify-center text-blue-500 mb-4">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h2 className="text-white font-bold text-xl mb-2">Tela muito pequena</h2>
+                <p className="text-zinc-500 text-sm leading-relaxed">
+                    A grade de orçamentos requer mais espaço horizontal. <br />
+                    Por favor, utilize um **tablet** ou **computador**, ou vire seu celular para a **horizontal**.
+                </p>
+            </div>
+
+            {/* CONTEÚDO PRINCIPAL (Escondido em telas menores que 640px) */}
+            <main className="hidden sm:block max-w-7xl mx-auto px-6 py-8">
+
+                {/* CABEÇALHO: Formulário Independente para o Título */}
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-zinc-900/20 p-6 rounded-2xl border border-zinc-800/50">
+                    <div className="flex-1 w-full group">
+                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-1 block">
+                            Nome do Orçamento
+                        </label>
+                        <form action={handleUpdateTitle} className="flex items-center gap-4">
+                            <input
+                                name="titulo"
+                                defaultValue={orcamentoExistente?.titulo}
+                                placeholder="Ex: Cartão de Visita Premium..."
+                                className="bg-transparent text-3xl font-black text-white border-b-2 border-transparent focus:border-blue-500 outline-none transition-all py-1 flex-1"
+                                required
+                            />
+                            {id !== 'novo' && (
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase border border-zinc-700 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                >
+                                    Atualizar Nome
+                                </button>
+                            )}
+                        </form>
+                    </div>
+
+                    <div className="text-right hidden md:block">
+                        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">ID do Registro</p>
+                        <p className="font-mono text-zinc-500 text-xs">{id === 'novo' ? 'PENDENTE' : id}</p>
+                    </div>
+                </header>
+
+                {/* HISTÓRICO DE VERSÕES */}
+                {versoes.length > 0 && <HistoricoVersoes versoes={versoes} />}
+
+                {/* FORMULÁRIO PRINCIPAL: Dados e Grade */}
+                <form action={handleSalvarVersao}>
+                    {id === 'novo' && <input type="hidden" name="titulo_inicial" value="Novo Orçamento" />}
+
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
+                        <section className="bg-zinc-900/30 p-6 rounded-2xl border border-zinc-800/50 flex-1 w-full md:max-w-md">
+                            <label className="text-[10px] font-bold uppercase text-zinc-500 mb-2 block tracking-widest">Cliente Associado</label>
+                            <select
+                                name="clienteId"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 outline-none appearance-none cursor-pointer text-sm"
+                                defaultValue={orcamentoExistente?.cliente_id || ""}
+                                required
+                            >
+                                <option value="" disabled>Selecione um cliente...</option>
+                                {clientes?.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                            </select>
+                        </section>
+
+                        <button type="submit" className="w-full md:w-auto px-8 py-5 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition text-xs uppercase flex items-center justify-center gap-3">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Gerar Nova Versão de Custos
+                        </button>
+                    </div>
+
+                    <GradeOrcamento
+                        insumosIniciais={insumosParaGrade}
+                        quantidadesPadrao={quantidadesIniciais}
+                        markupInicial={30}
+                    />
+                </form>
+            </main>
+        </div>
+    );
+}
+</file>
+
+<file path="app/dashboard/orcamentos/page.tsx">
+export const dynamic = "force-dynamic";
+
+import { DashboardHeader } from "@/components/dashboard-header";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+
+export default async function DashboardOrcamentosPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/autenticacao/entrar');
+
+  const query = (await searchParams).q || "";
+
+  const { data: clientes } = await supabase.from('clientes').select('id, nome');
+  const clientesMap = new Map((clientes || []).map(c => [c.id, c.nome]));
+  
+  const idsClientesFiltrados = (clientes || [])
+    .filter(c => c.nome.toLowerCase().includes(query.toLowerCase()))
+    .map(c => c.id);
+
+  let orcamentosQuery = supabase
+    .from('orcamentos')
+    .select('id, titulo, cliente_id, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (query) {
+    const filterParts = [`titulo.ilike.%${query}%`];
+    if (idsClientesFiltrados.length > 0) {
+      filterParts.push(`cliente_id.in.(${idsClientesFiltrados.join(',')})`);
+    }
+    orcamentosQuery = orcamentosQuery.or(filterParts.join(','));
+  }
+
+  const { data: orcamentos } = await orcamentosQuery;
+
+  return (
+    // O segredo do alinhamento está nestes paddings (px-6 md:px-10) que devem bater com o conteúdo do Header
+    <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
+      <DashboardHeader />
+        
+        {/* Barra de Busca */}
+        <div className="px-8 flex flex-col md:flex-row items-center gap-4 mb-10 w-full">
+          <Link href="/dashboard/orcamentos/novo" className="w-full md:w-auto">
+            <button className="w-full md:w-auto bg-blue-600 text-white font-bold px-6 py-3.5 rounded-xl shadow-lg shadow-blue-900/20 hover:bg-blue-500 transition uppercase text-xs flex items-center justify-center gap-2">
+               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+               Novo Orçamento
+            </button>
+          </Link>
+
+          <form method="GET" className="flex-1 w-full relative">
+            <input
+              type="text"
+              name="q"
+              defaultValue={query}
+              placeholder="Buscar por título ou nome do cliente..."
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+            />
+            <svg className="w-5 h-5 text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </form>
+        </div>
+
+        {/* Grid de Cards */}
+        <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {(orcamentos || []).map((orc) => (
+            <div key={orc.id} className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition flex flex-col gap-4">
+              <div className="flex-1">
+                <div className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1 line-clamp-2">{orc.titulo}</div>
+                <div className="text-zinc-400 text-sm flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-700"></span>
+                  Cliente: <span className="text-zinc-200">{clientesMap.get(orc.cliente_id) || "Desconhecido"}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center mt-auto pt-4 border-t border-zinc-800/50">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                  {orc.created_at ? new Date(orc.created_at).toLocaleDateString('pt-BR') : '-'}
+                </span>
+                <Link href={`/dashboard/orcamentos/${orc.id}`} className="px-4 py-2 rounded-lg bg-zinc-800 text-white text-[10px] font-bold uppercase hover:bg-zinc-700 transition">
+                  Ver Detalhes
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+    
+    </div>
+  );
+}
+</file>
+
+<file path="app/layout.tsx">
+import type { Metadata } from "next";
+
+
+import "./globals.css";
+import NextTopLoader from "nextjs-toploader";
+
+export const metadata: Metadata = {
+  metadataBase: new URL("https://precifica.nkwflow.com"),
+  title: "Precifica - Simplificando seus orçamentos",
+  description: "Facilite a criação e gestão de orçamentos com nossa ferramenta intuitiva e eficiente.",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="pt-BR" className="dark">
+      <body className="font-sans antialiased bg-background text-foreground">
+
+        <NextTopLoader
+          color="#2563eb" // Cor azul-600 (a mesma dos seus botões)
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false} // Desative o spinner se quiser apenas a barra
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #2563eb,0 0 5px #2563eb"
+        />
+
+        {children}
+      </body>
+    </html>
+  );
+}
+</file>
+
+<file path="package.json">
+{
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@radix-ui/react-checkbox": "^1.3.1",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.14",
+    "@radix-ui/react-label": "^2.1.6",
+    "@radix-ui/react-slot": "^1.2.2",
+    "@supabase/ssr": "latest",
+    "@supabase/supabase-js": "latest",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.29.2",
+    "lucide-react": "^0.511.0",
+    "next": "latest",
+    "next-themes": "^0.4.6",
+    "nextjs-toploader": "^3.9.17",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.71.1",
+    "supabase": "^2.72.8",
+    "tailwind-merge": "^3.3.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.1",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5"
+  }
+}
+</file>
+
+<file path="app/page.tsx">
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function Home() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (data?.claims) {
+    redirect("/dashboard/orcamentos");
+  }
+  redirect("/autenticacao/entrar");
+}
+
+//console.log('')
+</file>
+
+</files>
