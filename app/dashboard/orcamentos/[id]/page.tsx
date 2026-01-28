@@ -6,8 +6,8 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { GradeOrcamento } from '@/components/orcamento/grade-orcamento';
 import { HistoricoVersoes } from '@/components/orcamento/historico-versoes';
 import { salvarFluxoOrcamento } from "../actions/salvarFluxoOrcamento";
-import { atualizarTituloOrcamento } from "@/app/dashboard/orcamentos/actions/atualizarTitulo"; // Certifique-se de criar esta action
-import { revalidatePath } from 'next/cache';
+import { atualizarTituloOrcamento } from "@/app/dashboard/orcamentos/actions/atualizarTitulo";
+import { BotaoSalvar } from '@/components/ui/botaoSalvar';
 
 export default async function OrcamentoPage({
     params,
@@ -20,13 +20,10 @@ export default async function OrcamentoPage({
     const { v: versaoIdSolicitada } = await searchParams;
     const supabase = await createClient();
 
-    // 1. Busca os tipos de papel para a calculadora (DADOS NOVOS)
     const { data: tiposPapel } = await supabase
         .from('tipos_papel')
         .select('*')
         .order('nome');
-
-        console.log(tiposPapel);
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect('/autenticacao/entrar');
@@ -74,23 +71,30 @@ export default async function OrcamentoPage({
         }
     }
 
-    // ACTION 1: Salvar nova versão (Custos)
     async function handleSalvarVersao(formData: FormData) {
         'use server';
+
+        const gradeDadosRaw = formData.get('grade_dados') as string;
+        if (!gradeDadosRaw) return;
+        const { markup, valores } = JSON.parse(gradeDadosRaw);
+
+        // Agora pegamos o 'titulo' que vem do input conectado via ID de formulário
+        const tituloFinal = formData.get('titulo') as string || "Novo Orçamento";
+
         const payload = {
-            titulo: orcamentoExistente?.titulo || formData.get('titulo_inicial') as string,
+            titulo: tituloFinal,
             clienteId: formData.get('clienteId') as string,
-            valores: JSON.parse(formData.get('valores') as string),
+            valores: valores,
             userId: user!.id,
-            markup: Number(formData.get('markup')),
+            markup: markup,
             ...(id !== 'novo' ? { orcamentoId: id } : {})
         };
 
         await salvarFluxoOrcamento(payload);
-        revalidatePath(`/dashboard/orcamentos/${id}`);
+        // Use the Next.js redirect instead of router.push in a server action
+        redirect('/dashboard/orcamentos');
     }
 
-    // ACTION 2: Apenas atualizar título
     async function handleUpdateTitle(formData: FormData) {
         'use server';
         const novoTitulo = formData.get('titulo') as string;
@@ -103,24 +107,14 @@ export default async function OrcamentoPage({
         <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
             <DashboardHeader />
 
-            {/* MENSAGEM PARA TELAS PEQUENAS (Aparece apenas abaixo de 640px/sm) */}
             <div className="sm:hidden flex flex-col items-center justify-center text-center py-20 px-6 bg-zinc-900/50 rounded-3xl border border-zinc-800 my-8">
-                <div className="w-16 h-16 bg-blue-600/10 rounded-full flex items-center justify-center text-blue-500 mb-4">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                </div>
                 <h2 className="text-white font-bold text-xl mb-2">Tela muito pequena</h2>
                 <p className="text-zinc-500 text-sm leading-relaxed">
-                    A grade de orçamentos requer mais espaço horizontal. <br />
-                    Por favor, utilize um **tablet** ou **computador**, ou vire seu celular para a **horizontal**.
+                    A grade de orçamentos requer mais espaço horizontal.
                 </p>
             </div>
 
-            {/* CONTEÚDO PRINCIPAL (Escondido em telas menores que 640px) */}
             <main className="hidden sm:block max-w-7xl mx-auto px-6 py-8">
-
-                {/* CABEÇALHO: Formulário Independente para o Título */}
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-zinc-900/20 p-6 rounded-2xl border border-zinc-800/50">
                     <div className="flex-1 w-full group">
                         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-1 block">
@@ -129,6 +123,7 @@ export default async function OrcamentoPage({
                         <form action={handleUpdateTitle} className="flex items-center gap-4">
                             <input
                                 name="titulo"
+                                form="form-principal" // CONECTA este campo ao formulário de salvar abaixo
                                 defaultValue={orcamentoExistente?.titulo}
                                 placeholder="Ex: Cartão de Visita Premium..."
                                 className="bg-transparent text-3xl font-black text-white border-b-2 border-transparent focus:border-blue-500 outline-none transition-all py-1 flex-1"
@@ -151,13 +146,9 @@ export default async function OrcamentoPage({
                     </div>
                 </header>
 
-                {/* HISTÓRICO DE VERSÕES */}
                 {versoes.length > 0 && <HistoricoVersoes versoes={versoes} />}
 
-                {/* FORMULÁRIO PRINCIPAL: Dados e Grade */}
-                <form action={handleSalvarVersao}>
-                    {id === 'novo' && <input type="hidden" name="titulo_inicial" value="Novo Orçamento" />}
-
+                <form action={handleSalvarVersao} id="form-principal">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
                         <section className="bg-zinc-900/30 p-6 rounded-2xl border border-zinc-800/50 flex-1 w-full md:max-w-md">
                             <label className="text-[10px] font-bold uppercase text-zinc-500 mb-2 block tracking-widest">Cliente Associado</label>
@@ -172,12 +163,7 @@ export default async function OrcamentoPage({
                             </select>
                         </section>
 
-                        <button type="submit" className="w-full md:w-auto px-8 py-5 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition text-xs uppercase flex items-center justify-center gap-3">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            Salvar
-                        </button>
+                        <BotaoSalvar />
                     </div>
 
                     <GradeOrcamento
@@ -191,4 +177,3 @@ export default async function OrcamentoPage({
         </div>
     );
 }
-

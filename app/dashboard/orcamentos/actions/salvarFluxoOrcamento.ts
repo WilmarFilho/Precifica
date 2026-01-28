@@ -61,6 +61,10 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 
   if (vError || !versao) throw new Error("Erro ao criar versão");
 
+  if (!payload.valores || !Array.isArray(payload.valores)) {
+     throw new Error("Os valores da grade são obrigatórios e devem ser um array.");
+  }
+    
   // 4. Inserir os Valores na Grade
   const valoresInsert: ValorInsert[] = payload.valores.map((v) => ({
     versao_id: versao.id,

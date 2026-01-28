@@ -57,6 +57,7 @@ app/dashboard/orcamentos/actions/atualizarTitulo.ts
 app/dashboard/orcamentos/actions/salvarFluxoOrcamento.ts
 app/dashboard/orcamentos/page.tsx
 app/globals.css
+app/icon.svg
 app/layout.tsx
 app/page.tsx
 components.json
@@ -96,6 +97,13 @@ tsconfig.json
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="app/icon.svg">
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="32" height="32" rx="16" fill="#2563EB"/>
+<path d="M18.7778 16C18.7778 15.4396 18.6149 14.8918 18.3096 14.4259C18.0044 13.9599 17.5706 13.5968 17.063 13.3823C16.5554 13.1679 15.9969 13.1118 15.4581 13.2211C14.9192 13.3304 14.4243 13.6003 14.0358 13.9965C13.6473 14.3928 13.3828 14.8976 13.2756 15.4472C13.1684 15.9969 13.2234 16.5665 13.4337 17.0843C13.6439 17.602 13.9999 18.0445 14.4567 18.3558C14.9136 18.6672 15.4506 18.8333 16 18.8333C16.7367 18.8333 17.4433 18.5348 17.9642 18.0035C18.4851 17.4721 18.7778 16.7514 18.7778 16ZM14.3333 16C14.3333 15.6638 14.4311 15.3351 14.6142 15.0555C14.7974 14.776 15.0577 14.5581 15.3622 14.4294C15.6667 14.3007 16.0018 14.2671 16.3252 14.3327C16.6485 14.3983 16.9454 14.5602 17.1785 14.7979C17.4116 15.0357 17.5703 15.3386 17.6346 15.6683C17.699 15.9981 17.6659 16.3399 17.5398 16.6506C17.4137 16.9612 17.2 17.2267 16.926 17.4135C16.6519 17.6003 16.3296 17.7 16 17.7C15.558 17.7 15.134 17.5209 14.8215 17.2021C14.5089 16.8833 14.3333 16.4509 14.3333 16ZM21 23.9333V8.06667C21 7.91638 20.9415 7.77224 20.8373 7.66597C20.7331 7.5597 20.5918 7.5 20.4444 7.5H11.5556C11.4082 7.5 11.2669 7.5597 11.1627 7.66597C11.0585 7.77224 11 7.91638 11 8.06667L11 23.9333C11 24.0836 11.0585 24.2278 11.1627 24.334C11.2669 24.4403 11.4082 24.5 11.5556 24.5H20.4444C20.5918 24.5 20.7331 24.4403 20.8373 24.334C20.9415 24.2278 21 24.0836 21 23.9333ZM12.1111 20.6502V11.3498C12.7419 11.1595 13.3161 10.8113 13.7812 10.3369C14.2464 9.8624 14.5878 9.27678 14.7743 8.63333H17.2257C17.4122 9.27678 17.7536 9.8624 18.2188 10.3369C18.6839 10.8113 19.2581 11.1595 19.8889 11.3498V20.6502C19.2581 20.8405 18.6839 21.1887 18.2188 21.6631C17.7536 22.1376 17.4122 22.7232 17.2257 23.3667H14.7743C14.5878 22.7232 14.2464 22.1376 13.7812 21.6631C13.3161 21.1887 12.7419 20.8405 12.1111 20.6502ZM18.4049 23.3667C18.6914 22.687 19.2225 22.1452 19.8889 21.853V23.3667H18.4049ZM19.8889 10.147C19.2225 9.85478 18.6914 9.31302 18.4049 8.63333H19.8889V10.147ZM13.5951 8.63333C13.3086 9.31302 12.7775 9.85478 12.1111 10.147V8.63333H13.5951ZM12.1111 21.853C12.7775 22.1452 13.3086 22.687 13.5951 23.3667H12.1111L12.1111 21.853Z" fill="white"/>
+</svg>
+</file>
 
 <file path=".github/workflows/deploy.yml">
 name: Deploy Precifica
@@ -1428,314 +1436,6 @@ const eslintConfig = [
 export default eslintConfig;
 </file>
 
-<file path="lib/database.types.ts">
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
-
-export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
-  public: {
-    Tables: {
-      clientes: {
-        Row: {
-          created_at: string | null
-          id: string
-          nome: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          nome: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          nome?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      insumos_base: {
-        Row: {
-          categoria: string | null
-          created_at: string | null
-          id: string
-          nome: string
-          unidade_medida: string | null
-        }
-        Insert: {
-          categoria?: string | null
-          created_at?: string | null
-          id?: string
-          nome: string
-          unidade_medida?: string | null
-        }
-        Update: {
-          categoria?: string | null
-          created_at?: string | null
-          id?: string
-          nome?: string
-          unidade_medida?: string | null
-        }
-        Relationships: []
-      }
-      orcamento_versao_valores: {
-        Row: {
-          id: string
-          insumo_id: string
-          quantidade_referencia: number | null
-          valor_custo_unitario_base: number
-          versao_id: string
-        }
-        Insert: {
-          id?: string
-          insumo_id: string
-          quantidade_referencia?: number | null
-          valor_custo_unitario_base: number
-          versao_id: string
-        }
-        Update: {
-          id?: string
-          insumo_id?: string
-          quantidade_referencia?: number | null
-          valor_custo_unitario_base?: number
-          versao_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "orcamento_versao_valores_insumo_id_fkey"
-            columns: ["insumo_id"]
-            isOneToOne: false
-            referencedRelation: "insumos_base"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orcamento_versao_valores_versao_id_fkey"
-            columns: ["versao_id"]
-            isOneToOne: false
-            referencedRelation: "orcamento_versoes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      orcamento_versoes: {
-        Row: {
-          created_at: string | null
-          custo_total_calculado: number | null
-          descricao_alteracao: string | null
-          id: string
-          orcamento_id: string
-          versao_numero: number
-        }
-        Insert: {
-          created_at?: string | null
-          custo_total_calculado?: number | null
-          descricao_alteracao?: string | null
-          id?: string
-          orcamento_id: string
-          versao_numero: number
-        }
-        Update: {
-          created_at?: string | null
-          custo_total_calculado?: number | null
-          descricao_alteracao?: string | null
-          id?: string
-          orcamento_id?: string
-          versao_numero?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "orcamento_versoes_orcamento_id_fkey"
-            columns: ["orcamento_id"]
-            isOneToOne: false
-            referencedRelation: "orcamentos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      orcamentos: {
-        Row: {
-          cliente_id: string
-          created_at: string | null
-          id: string
-          titulo: string
-          user_id: string
-        }
-        Insert: {
-          cliente_id: string
-          created_at?: string | null
-          id?: string
-          titulo: string
-          user_id: string
-        }
-        Update: {
-          cliente_id?: string
-          created_at?: string | null
-          id?: string
-          titulo?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "orcamentos_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
-
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
-
-export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
-    }
-    ? R
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
-
-export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
-
-export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {},
-  },
-} as const
-</file>
-
 <file path="lib/supabase/client.ts">
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -2215,186 +1915,6 @@ export default function PaginaRedefinirSenha() {
 }
 </file>
 
-<file path="components/orcamento/grade-orcamento.tsx">
-'use client';
-
-import React, { useState, useMemo, useEffect } from 'react';
-
-interface Insumo {
-  id: string;
-  nome: string;
-  categoria: string;
-  custo_unitario: number;
-}
-
-interface GradeOrcamentoProps {
-  insumosIniciais: Insumo[];
-  quantidadesPadrao: number[];
-  markupInicial: number;
-}
-
-export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInicial }: GradeOrcamentoProps) {
-  // Estados internos
-  const [quantidades, setQuantidades] = useState<number[]>(quantidadesPadrao);
-  const [markup, setMarkup] = useState<number>(markupInicial);
-  const [custos, setCustos] = useState<Record<string, number>>({});
-
-  /**
-   * ESTE É O AJUSTE PRINCIPAL:
-   * Sempre que as props vindas do servidor mudarem (ao trocar de versão),
-   * o useEffect reinicia os estados internos do componente.
-   */
-  useEffect(() => {
-    const init: Record<string, number> = {};
-    insumosIniciais.forEach((i) => {
-      init[i.id] = i.custo_unitario || 0;
-    });
-    
-    setCustos(init);
-    setQuantidades(quantidadesPadrao);
-    setMarkup(markupInicial);
-  }, [insumosIniciais, quantidadesPadrao, markupInicial]);
-
-  // Agrupamento de categorias (memoizado para performance)
-  const categorias = useMemo(() => {
-    const groups: Record<string, Insumo[]> = {};
-    insumosIniciais.forEach((i) => {
-      const cat = i.categoria || 'Geral';
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(i);
-    });
-    return groups;
-  }, [insumosIniciais]);
-
-  // Cálculos de totais (recalcula sempre que custos ou quantidades mudarem)
-  const totaisCusto = useMemo(() => {
-    return quantidades.map(q => 
-      insumosIniciais.reduce((acc, insumo) => acc + ((custos[insumo.id] || 0) / 100) * q, 0)
-    );
-  }, [custos, quantidades, insumosIniciais]);
-
-  // Prepara os dados para o envio do formulário (Action)
-  const payloadValores = useMemo(() => {
-    return JSON.stringify(
-      quantidades.flatMap(q => 
-        insumosIniciais.map(insumo => ({
-          insumo_id: insumo.id,
-          quantidade_referencia: q,
-          valor_custo_unitario_base: custos[insumo.id] || 0
-        }))
-      )
-    );
-  }, [custos, quantidades, insumosIniciais]);
-
-  return (
-    <div className="space-y-6">
-      {/* Campos ocultos para o FormData da Action */}
-      <input type="hidden" name="valores" value={payloadValores} />
-      <input type="hidden" name="markup" value={markup} />
-
-      {/* Toolbar de Configurações */}
-      <div className="flex justify-between items-center bg-zinc-900/40 p-4 rounded-xl border border-zinc-800">
-        <div className="flex items-center gap-4">
-          <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Markup (%)</label>
-          <input 
-            type="number" 
-            value={markup} 
-            onChange={(e) => setMarkup(Number(e.target.value))}
-            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-1 w-20 text-blue-400 font-bold outline-none focus:border-blue-500 transition"
-          />
-        </div>
-        <button 
-          type="button"
-          onClick={() => setQuantidades([...quantidades, (quantidades[quantidades.length-1] || 0) + 500])}
-          className="text-[10px] bg-blue-600/10 text-blue-500 border border-blue-500/20 px-4 py-2 rounded-lg font-bold hover:bg-blue-600/20 transition uppercase"
-        >
-          + Adicionar Coluna
-        </button>
-      </div>
-
-      <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/50">
-        <table className="w-full text-left text-sm border-collapse">
-          <thead className="bg-zinc-900 text-zinc-500 uppercase text-[10px] font-bold">
-            <tr>
-              <th className="p-4 w-1/4">Insumo</th>
-              <th className="p-4 text-center w-40">Custo Base (100un)</th>
-              {quantidades.map((q, i) => (
-                <th key={i} className="p-4 text-center bg-zinc-800/20">
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-[8px] opacity-50">Qtd Ref.</span>
-                    <input 
-                      type="number"
-                      value={q}
-                      onChange={(e) => {
-                        const newQ = [...quantidades];
-                        newQ[i] = Number(e.target.value);
-                        setQuantidades(newQ);
-                      }}
-                      className="bg-transparent border-b border-zinc-700 w-16 text-center text-zinc-300 focus:border-blue-500 outline-none font-mono"
-                    />
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-800/50">
-            {Object.entries(categorias).map(([cat, items]) => (
-              <React.Fragment key={cat}>
-                <tr className="bg-zinc-800/30">
-                  <td colSpan={2 + quantidades.length} className="px-4 py-1.5 text-[9px] font-bold text-blue-400 uppercase tracking-widest border-y border-zinc-800">
-                    {cat}
-                  </td>
-                </tr>
-                {items.map(item => (
-                  <tr key={item.id} className="hover:bg-zinc-800/10 transition group">
-                    <td className="p-4 text-zinc-300 group-hover:text-white font-medium">{item.nome}</td>
-                    <td className="p-4">
-                      <div className="relative flex items-center">
-                        <span className="absolute left-2 text-zinc-600 text-[10px]">R$</span>
-                        <input 
-                          type="number" 
-                          step="0.01"
-                          value={custos[item.id] ?? 0} 
-                          onChange={(e) => setCustos({...custos, [item.id]: Number(e.target.value)})}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 pl-7 text-right tabular-nums text-zinc-400 focus:text-blue-400 focus:border-blue-500/50 transition outline-none"
-                        />
-                      </div>
-                    </td>
-                    {quantidades.map((q, i) => (
-                      <td key={i} className="p-4 text-center text-zinc-500 tabular-nums border-l border-zinc-800/30 font-mono">
-                        {(( (custos[item.id] || 0) / 100) * q).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </React.Fragment>
-            ))}
-          </tbody>
-          <tfoot className="bg-zinc-900/80 font-bold border-t border-zinc-700 sticky bottom-0">
-            <tr>
-              <td colSpan={2} className="p-4 text-right uppercase text-[10px] text-zinc-500 tracking-widest">Custo de Produção Total</td>
-              {totaisCusto.map((t, i) => (
-                <td key={i} className="p-4 text-center text-zinc-400 border-l border-zinc-800/30 font-mono">
-                  {t.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </td>
-              ))}
-            </tr>
-            <tr className="bg-blue-600/10">
-              <td colSpan={2} className="p-4 text-right uppercase text-[10px] text-blue-500 tracking-widest">Preço Sugerido com Markup</td>
-              {totaisCusto.map((t, i) => (
-                <td key={i} className="p-4 text-center text-lg text-blue-400 border-l border-blue-500/10 font-mono">
-                  {(t * (1 + markup/100)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </td>
-              ))}
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="components/orcamento/historico-versoes.tsx">
 'use client';
 
@@ -2515,6 +2035,353 @@ EXPOSE 3002
 
 # No modo standalone, rodamos o server.js diretamente com node, é muito mais rápido
 CMD ["node", "server.js"]
+</file>
+
+<file path="lib/database.types.ts">
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
+  public: {
+    Tables: {
+      clientes: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          nome: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      insumos_base: {
+        Row: {
+          categoria: string | null
+          created_at: string | null
+          id: string
+          nome: string
+          unidade_medida: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string | null
+          id?: string
+          nome: string
+          unidade_medida?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string | null
+          id?: string
+          nome?: string
+          unidade_medida?: string | null
+        }
+        Relationships: []
+      }
+      orcamento_versao_valores: {
+        Row: {
+          id: string
+          insumo_id: string
+          quantidade_referencia: number | null
+          valor_custo_unitario_base: number
+          versao_id: string
+        }
+        Insert: {
+          id?: string
+          insumo_id: string
+          quantidade_referencia?: number | null
+          valor_custo_unitario_base: number
+          versao_id: string
+        }
+        Update: {
+          id?: string
+          insumo_id?: string
+          quantidade_referencia?: number | null
+          valor_custo_unitario_base?: number
+          versao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_versao_valores_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos_base"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_versao_valores_versao_id_fkey"
+            columns: ["versao_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_versoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_versoes: {
+        Row: {
+          created_at: string | null
+          custo_total_calculado: number | null
+          descricao_alteracao: string | null
+          id: string
+          orcamento_id: string
+          versao_numero: number
+        }
+        Insert: {
+          created_at?: string | null
+          custo_total_calculado?: number | null
+          descricao_alteracao?: string | null
+          id?: string
+          orcamento_id: string
+          versao_numero: number
+        }
+        Update: {
+          created_at?: string | null
+          custo_total_calculado?: number | null
+          descricao_alteracao?: string | null
+          id?: string
+          orcamento_id?: string
+          versao_numero?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_versoes_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamentos: {
+        Row: {
+          cliente_id: string
+          created_at: string | null
+          id: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string | null
+          id?: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string | null
+          id?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tipos_papel: {
+        Row: {
+          created_at: string | null
+          f1: number | null
+          f2: number | null
+          f3: number | null
+          f4: number | null
+          f6: number | null
+          f8: number | null
+          f9: number | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string | null
+          f1?: number | null
+          f2?: number | null
+          f3?: number | null
+          f4?: number | null
+          f6?: number | null
+          f8?: number | null
+          f9?: number | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string | null
+          f1?: number | null
+          f2?: number | null
+          f3?: number | null
+          f4?: number | null
+          f6?: number | null
+          f8?: number | null
+          f9?: number | null
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
 </file>
 
 <file path="proxy.ts">
@@ -2666,6 +2533,10 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 
   if (vError || !versao) throw new Error("Erro ao criar versão");
 
+  if (!payload.valores || !Array.isArray(payload.valores)) {
+     throw new Error("Os valores da grade são obrigatórios e devem ser um array.");
+  }
+    
   // 4. Inserir os Valores na Grade
   const valoresInsert: ValorInsert[] = payload.valores.map((v) => ({
     versao_id: versao.id,
@@ -2755,6 +2626,399 @@ export function DashboardHeader() {
         </div>
       )}
     </header>
+  );
+}
+</file>
+
+<file path="components/orcamento/grade-orcamento.tsx">
+'use client';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { Calculator, X, ChevronDown, ChevronRight, Plus, Trash2, Search } from 'lucide-react';
+
+interface Insumo {
+  id: string;
+  nome: string;
+  categoria: string;
+  custo_unitario: number;
+}
+
+interface TipoPapel {
+  id: string;
+  nome: string;
+  f1: number; f2: number; f3: number; f4: number; f6: number; f8: number; f9: number;
+}
+
+interface GradeOrcamentoProps {
+  insumosIniciais: Insumo[];
+  quantidadesPadrao: number[];
+  markupInicial: number;
+  tiposPapel: TipoPapel[];
+}
+
+export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInicial, tiposPapel }: GradeOrcamentoProps) {
+  const [quantidades, setQuantidades] = useState<number[]>(quantidadesPadrao);
+  const [markup, setMarkup] = useState<number>(markupInicial);
+  const [custos, setCustos] = useState<Record<string, number>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeInsumoId, setActiveInsumoId] = useState<string | null>(null);
+  const [calcParams, setCalcParams] = useState({
+    papelId: '',
+    formato: 'f1' as keyof Omit<TipoPapel, 'id' | 'nome'>,
+    quantidadeFolhas: 1
+  });
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const papeisFiltrados = useMemo(() => {
+    if (searchTerm.length < 4) return [];
+    return tiposPapel.filter(p =>
+      p.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm, tiposPapel]);
+
+  useEffect(() => {
+    const initCustos: Record<string, number> = {};
+    const initExpanded: Record<string, boolean> = {};
+    const categoriasPrincipais = ['miolo', 'capa', 'guardas'];
+
+    insumosIniciais.forEach((i) => {
+      initCustos[i.id] = i.custo_unitario || 0;
+      const cat = (i.categoria || 'outros').toLowerCase();
+      if (!initExpanded.hasOwnProperty(cat)) {
+        initExpanded[cat] = categoriasPrincipais.includes(cat);
+      }
+    });
+
+    setCustos(initCustos);
+    setExpandedCategories(initExpanded);
+  }, [insumosIniciais]);
+
+  const adicionarColuna = () => {
+    const ultimaQtd = quantidades[quantidades.length - 1] || 0;
+    setQuantidades([...quantidades, ultimaQtd + 100]);
+  };
+
+  const removerColuna = (index: number) => {
+    if (quantidades.length > 1) {
+      setQuantidades(quantidades.filter((_, i) => i !== index));
+    }
+  };
+
+  const alterarQuantidade = (index: number, valor: number) => {
+    const novas = [...quantidades];
+    novas[index] = valor;
+    setQuantidades(novas);
+  };
+
+  const categoriasOrdenadas = useMemo(() => {
+    const ordemCategorias = ['miolo', 'capa', 'guardas', 'bloco 1° via', 'bloco 2° via', 'bloco 3° via', 'papelão', 'outros', 'tercerizados'];
+    const groups: Record<string, Insumo[]> = {};
+
+    insumosIniciais.forEach((i) => {
+      const cat = (i.categoria || 'outros').toLowerCase();
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(i);
+    });
+
+    return Object.entries(groups)
+      .sort(([a], [b]) => {
+        const indexA = ordemCategorias.indexOf(a);
+        const indexB = ordemCategorias.indexOf(b);
+        return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+      })
+      .map(([cat, items]) => {
+        const itemsOrdenados = [...items].sort((a, b) => {
+          const aIsPapel = a.nome.toLowerCase().includes('papel') && !a.nome.toLowerCase().includes('papelão');
+          const bIsPapel = b.nome.toLowerCase().includes('papel') && !b.nome.toLowerCase().includes('papelão');
+          if (aIsPapel && !bIsPapel) return -1;
+          if (!aIsPapel && bIsPapel) return 1;
+          return 0;
+        });
+        return [cat, itemsOrdenados] as [string, Insumo[]];
+      });
+  }, [insumosIniciais]);
+
+  const aplicarCalculoPapel = () => {
+    const papelSelecionado = tiposPapel.find(p => p.id === calcParams.papelId);
+    if (papelSelecionado && activeInsumoId) {
+      const valorUnitarioFormato = papelSelecionado[calcParams.formato] || 0;
+      const custoTotalFinal = valorUnitarioFormato * calcParams.quantidadeFolhas;
+      setCustos(prev => ({ ...prev, [activeInsumoId]: Number(custoTotalFinal.toFixed(4)) }));
+      setIsModalOpen(false);
+      setSearchTerm('');
+    }
+  };
+
+  const totaisCusto = useMemo(() => {
+    return quantidades.map(q =>
+      insumosIniciais.reduce((acc, insumo) => acc + ((custos[insumo.id] || 0) / 100) * q, 0)
+    );
+  }, [custos, quantidades, insumosIniciais]);
+
+  return (
+    <div>
+      {/* Campo Oculto para sincronizar com a Server Action */}
+      <input
+        type="hidden"
+        name="grade_dados"
+        value={JSON.stringify({
+          markup,
+          valores: insumosIniciais.map(i => ({
+            insumo_id: i.id,
+            quantidade_referencia: 100,
+            valor_custo_unitario_base: custos[i.id] || 0
+          }))
+        })}
+      />
+
+      {/* TOOLBAR */}
+      <div className="flex justify-between items-center bg-zinc-900/40 p-4 rounded-xl border border-zinc-800">
+        <div className="flex items-center gap-4">
+          <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Markup (%)</label>
+          <input
+            type="number"
+            value={markup}
+            onChange={(e) => setMarkup(Number(e.target.value))}
+            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-1 w-20 text-blue-400 font-bold outline-none focus:border-blue-500 transition"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={adicionarColuna}
+          className="flex items-center gap-2 bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 px-4 py-2 rounded-lg text-xs font-bold transition uppercase tracking-tighter"
+        >
+          <Plus size={14} /> Adicionar Coluna
+        </button>
+      </div>
+
+      {/* TABELA */}
+      <div className="mt-8 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/50 shadow-xl">
+        <table className="w-full text-left text-sm border-collapse min-w-[800px]">
+          <thead className="bg-zinc-900 text-zinc-500 uppercase font-bold">
+            <tr>
+              <th className="p-4 w-1/4 border-b border-zinc-800 text-[10px]">Insumo</th>
+              <th className="p-4 text-center w-40 border-b border-zinc-800 text-[10px]">Custo Base (100un)</th>
+              {quantidades.map((q, i) => (
+                <th key={i} className="p-4 text-center bg-zinc-800/10 border-b border-zinc-800 min-w-[130px]">
+                  <div className="flex flex-col items-center justify-center group">
+                    <input
+                      type="number"
+                      value={q}
+                      onChange={(e) => alterarQuantidade(i, Number(e.target.value))}
+                      className="bg-transparent border-none text-center text-blue-400 font-black text-lg w-full focus:ring-0 focus:outline-none p-0 leading-none"
+                    />
+                    <span className="text-[9px] text-zinc-500 mt-1 tracking-tighter">UNIDADES</span>
+                    <button
+                      type="button"
+                      onClick={() => removerColuna(i)}
+                      className="opacity-0 group-hover:opacity-100 text-red-500/50 hover:text-red-500 transition-all mt-1"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-800/50">
+            {categoriasOrdenadas.map(([cat, items]) => {
+              const isExpanded = expandedCategories[cat];
+              return (
+                <React.Fragment key={cat}>
+                  <tr onClick={() => setExpandedCategories(p => ({ ...p, [cat]: !isExpanded }))} className="bg-zinc-800/30 cursor-pointer hover:bg-zinc-800/50">
+                    <td colSpan={2 + quantidades.length} className="px-4 py-2 border-y border-zinc-800">
+                      <div className="flex items-center gap-2 text-[10px] font-black text-blue-400 uppercase tracking-widest">
+                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />} {cat}
+                      </div>
+                    </td>
+                  </tr>
+                  {isExpanded && items.map(item => {
+                    const isPapel = item.nome.toLowerCase().includes('papel');
+                    const isPapelao = item.categoria.toLowerCase() === 'papelão' || item.nome.toLowerCase().includes('papelão');
+                    const showCalculator = isPapel && !isPapelao;
+                    return (
+                      <tr key={item.id} className="hover:bg-zinc-800/10 transition group">
+                        <td className="p-4 text-zinc-300 font-medium">{item.nome}</td>
+                        <td className="p-4">
+                          <div className="relative flex items-center gap-2">
+                            <div className="relative flex-1">
+                              <span className="absolute left-2 top-1.5 text-zinc-600 text-[10px]">R$</span>
+                              <input
+                                type="number"
+                                step="0.0001"
+                                value={custos[item.id] ?? 0}
+                                onChange={(e) => setCustos({ ...custos, [item.id]: Number(e.target.value) })}
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 pl-7 text-right tabular-nums text-zinc-400 focus:text-blue-400 outline-none"
+                              />
+                            </div>
+                            {showCalculator && (
+                              <button
+                                type="button"
+                                onClick={() => { setActiveInsumoId(item.id); setIsModalOpen(true); }}
+                                className="p-2 bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 rounded-lg transition"
+                              >
+                                <Calculator size={16} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        {quantidades.map((q, i) => (
+                          <td key={i} className="p-4 text-center text-zinc-500 tabular-nums border-l border-zinc-800/30 font-mono">
+                            {(((custos[item.id] || 0) / 100) * q).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+          <tfoot className="bg-zinc-900/50 border-t-2 border-zinc-800">
+            <tr className="bg-zinc-900/80">
+              <td className="p-4 font-bold text-zinc-400 uppercase text-[10px]">Custo Total</td>
+              <td className="p-4"></td>
+              {totaisCusto.map((total, i) => (
+                <td key={i} className="p-4 text-center text-zinc-300 font-mono font-bold border-l border-zinc-800/30">
+                  {total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </td>
+              ))}
+            </tr>
+            <tr className="bg-blue-600/10">
+              <td className="p-4 font-black text-blue-500 uppercase text-[10px]">Venda ({markup}%)</td>
+              <td className="p-4"></td>
+              {totaisCusto.map((total, i) => (
+                <td key={i} className="p-4 text-center text-blue-400 font-mono font-black text-lg border-l border-zinc-800/30">
+                  {(total * (1 + markup / 100)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </td>
+              ))}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* MODAL DA CALCULADORA */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-white font-bold flex items-center gap-2">
+                <Calculator className="text-blue-500" size={20} />
+                Calculadora de Folhas
+              </h3>
+              <button
+                type="button"
+                onClick={() => { setIsModalOpen(false); setSearchTerm(''); }}
+                className="text-zinc-500 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Buscar Insumo de Papel</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 text-zinc-500" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Digite pelo menos 4 letras..."
+                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 pl-10 text-zinc-300 outline-none focus:border-blue-500"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                  />
+                </div>
+
+                <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 custom-scrollbar">
+                  {searchTerm.length >= 4 ? (
+                    papeisFiltrados.length > 0 ? (
+                      papeisFiltrados.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setCalcParams({ ...calcParams, papelId: p.id });
+                            setSearchTerm(p.nome);
+                          }}
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-zinc-900 last:border-0
+                            ${calcParams.papelId === p.id
+                              ? 'bg-blue-600/20 text-blue-400 font-bold'
+                              : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                            }`}
+                        >
+                          {p.nome}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-xs text-zinc-600 uppercase">Nenhum papel encontrado</div>
+                    )
+                  ) : (
+                    <div className="p-4 text-center text-xs text-zinc-600 uppercase">Digite para pesquisar</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Formato</label>
+                  <select
+                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-zinc-300 outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                    value={calcParams.formato}
+                    onChange={(e) => setCalcParams({ ...calcParams, formato: e.target.value as keyof Omit<TipoPapel, 'id' | 'nome'> })}
+                  >
+                    {['f1', 'f2', 'f3', 'f4', 'f6', 'f8', 'f9'].map(f => (
+                      <option key={f} value={f}>{f.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Qtd. de Folhas</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-zinc-300 outline-none focus:border-blue-500"
+                    value={calcParams.quantidadeFolhas}
+                    onChange={(e) => setCalcParams({ ...calcParams, quantidadeFolhas: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-blue-600/5 border border-blue-500/20 p-4 rounded-xl mt-4 space-y-2">
+                <div className="flex justify-between text-[11px] text-zinc-400 italic">
+                  <span>Papel selecionado:</span>
+                  <span className="text-zinc-300">{tiposPapel.find(p => p.id === calcParams.papelId)?.nome || 'Nenhum'}</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-zinc-400">
+                  <span>Preço Unitário ({calcParams.formato.toUpperCase()}):</span>
+                  <span>
+                    R$ {tiposPapel.find(p => p.id === calcParams.papelId)?.[calcParams.formato]?.toFixed(4) || '0,0000'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm font-bold text-white border-t border-zinc-800 pt-2">
+                  <span>Custo Total:</span>
+                  <span className="text-blue-400">
+                    {((tiposPapel.find(p => p.id === calcParams.papelId)?.[calcParams.formato] || 0) * calcParams.quantidadeFolhas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={aplicarCalculoPapel}
+                disabled={!calcParams.papelId}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-lg active:scale-[0.98] mt-2"
+              >
+                Aplicar na Grade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 </file>
@@ -2883,193 +3147,6 @@ export default async function ClientesPage({
 }
 </file>
 
-<file path="app/dashboard/orcamentos/[id]/page.tsx">
-export const dynamic = 'force-dynamic';
-
-import { redirect } from 'next/navigation';
-import { createClient } from "@/lib/supabase/server";
-import { DashboardHeader } from '@/components/dashboard-header';
-import { GradeOrcamento } from '@/components/orcamento/grade-orcamento';
-import { HistoricoVersoes } from '@/components/orcamento/historico-versoes';
-import { salvarFluxoOrcamento } from "../actions/salvarFluxoOrcamento";
-import { atualizarTituloOrcamento } from "@/app/dashboard/orcamentos/actions/atualizarTitulo"; // Certifique-se de criar esta action
-import { revalidatePath } from 'next/cache';
-
-export default async function OrcamentoPage({
-    params,
-    searchParams
-}: {
-    params: { id: string },
-    searchParams: { v?: string }
-}) {
-    const { id } = await params;
-    const { v: versaoIdSolicitada } = await searchParams;
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect('/autenticacao/entrar');
-
-    const { data: clientes } = await supabase.from('clientes').select('id, nome').order('nome');
-
-    let insumosParaGrade = [];
-    let orcamentoExistente: { id: string; titulo: string; cliente_id: string } | null = null;
-    let versoes = [];
-    let quantidadesIniciais = [1000, 3000, 5000];
-
-    if (id === 'novo') {
-        const { data: insumosBase } = await supabase.from('insumos_base').select('*').order('categoria');
-        insumosParaGrade = insumosBase?.map(i => ({ ...i, id: String(i.id), custo_unitario: 0 })) || [];
-    } else {
-        const { data: orc } = await supabase.from('orcamentos').select('*').eq('id', id).single();
-        const { data: vList } = await supabase.from('orcamento_versoes').select('*').eq('orcamento_id', id).order('versao_numero', { ascending: false });
-
-        orcamentoExistente = orc;
-        versoes = vList || [];
-
-        const versaoParaCarregar = versaoIdSolicitada
-            ? versoes.find(v => v.id === versaoIdSolicitada)
-            : versoes[0];
-
-        if (versaoParaCarregar) {
-            const { data: valores } = await supabase
-                .from('orcamento_versao_valores')
-                .select('*, insumos_base(nome, categoria)')
-                .eq('versao_id', versaoParaCarregar.id);
-
-            if (valores && valores.length > 0) {
-                quantidadesIniciais = [...new Set(valores.map(val => val.quantidade_referencia))].sort((a, b) => a - b);
-                const uniqueIds = [...new Set(valores.map(val => val.insumo_id))];
-                insumosParaGrade = uniqueIds.map(insId => {
-                    const item = valores.find(val => val.insumo_id === insId);
-                    return {
-                        id: String(insId),
-                        nome: item.insumos_base.nome,
-                        categoria: item.insumos_base.categoria || 'Geral',
-                        custo_unitario: item.valor_custo_unitario_base
-                    };
-                });
-            }
-        }
-    }
-
-    // ACTION 1: Salvar nova versão (Custos)
-    async function handleSalvarVersao(formData: FormData) {
-        'use server';
-        const payload = {
-            titulo: orcamentoExistente?.titulo || formData.get('titulo_inicial') as string,
-            clienteId: formData.get('clienteId') as string,
-            valores: JSON.parse(formData.get('valores') as string),
-            userId: user!.id,
-            markup: Number(formData.get('markup')),
-            ...(id !== 'novo' ? { orcamentoId: id } : {})
-        };
-
-        await salvarFluxoOrcamento(payload);
-        revalidatePath(`/dashboard/orcamentos/${id}`);
-    }
-
-    // ACTION 2: Apenas atualizar título
-    async function handleUpdateTitle(formData: FormData) {
-        'use server';
-        const novoTitulo = formData.get('titulo') as string;
-        if (id !== 'novo' && novoTitulo) {
-            await atualizarTituloOrcamento(id, novoTitulo);
-        }
-    }
-
-    return (
-        <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
-            <DashboardHeader />
-
-            {/* MENSAGEM PARA TELAS PEQUENAS (Aparece apenas abaixo de 640px/sm) */}
-            <div className="sm:hidden flex flex-col items-center justify-center text-center py-20 px-6 bg-zinc-900/50 rounded-3xl border border-zinc-800 my-8">
-                <div className="w-16 h-16 bg-blue-600/10 rounded-full flex items-center justify-center text-blue-500 mb-4">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                </div>
-                <h2 className="text-white font-bold text-xl mb-2">Tela muito pequena</h2>
-                <p className="text-zinc-500 text-sm leading-relaxed">
-                    A grade de orçamentos requer mais espaço horizontal. <br />
-                    Por favor, utilize um **tablet** ou **computador**, ou vire seu celular para a **horizontal**.
-                </p>
-            </div>
-
-            {/* CONTEÚDO PRINCIPAL (Escondido em telas menores que 640px) */}
-            <main className="hidden sm:block max-w-7xl mx-auto px-6 py-8">
-
-                {/* CABEÇALHO: Formulário Independente para o Título */}
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-zinc-900/20 p-6 rounded-2xl border border-zinc-800/50">
-                    <div className="flex-1 w-full group">
-                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-1 block">
-                            Nome do Orçamento
-                        </label>
-                        <form action={handleUpdateTitle} className="flex items-center gap-4">
-                            <input
-                                name="titulo"
-                                defaultValue={orcamentoExistente?.titulo}
-                                placeholder="Ex: Cartão de Visita Premium..."
-                                className="bg-transparent text-3xl font-black text-white border-b-2 border-transparent focus:border-blue-500 outline-none transition-all py-1 flex-1"
-                                required
-                            />
-                            {id !== 'novo' && (
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase border border-zinc-700 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                >
-                                    Atualizar Nome
-                                </button>
-                            )}
-                        </form>
-                    </div>
-
-                    <div className="text-right hidden md:block">
-                        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">ID do Registro</p>
-                        <p className="font-mono text-zinc-500 text-xs">{id === 'novo' ? 'PENDENTE' : id}</p>
-                    </div>
-                </header>
-
-                {/* HISTÓRICO DE VERSÕES */}
-                {versoes.length > 0 && <HistoricoVersoes versoes={versoes} />}
-
-                {/* FORMULÁRIO PRINCIPAL: Dados e Grade */}
-                <form action={handleSalvarVersao}>
-                    {id === 'novo' && <input type="hidden" name="titulo_inicial" value="Novo Orçamento" />}
-
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
-                        <section className="bg-zinc-900/30 p-6 rounded-2xl border border-zinc-800/50 flex-1 w-full md:max-w-md">
-                            <label className="text-[10px] font-bold uppercase text-zinc-500 mb-2 block tracking-widest">Cliente Associado</label>
-                            <select
-                                name="clienteId"
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 outline-none appearance-none cursor-pointer text-sm"
-                                defaultValue={orcamentoExistente?.cliente_id || ""}
-                                required
-                            >
-                                <option value="" disabled>Selecione um cliente...</option>
-                                {clientes?.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                            </select>
-                        </section>
-
-                        <button type="submit" className="w-full md:w-auto px-8 py-5 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition text-xs uppercase flex items-center justify-center gap-3">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            Gerar Nova Versão de Custos
-                        </button>
-                    </div>
-
-                    <GradeOrcamento
-                        insumosIniciais={insumosParaGrade}
-                        quantidadesPadrao={quantidadesIniciais}
-                        markupInicial={30}
-                    />
-                </form>
-            </main>
-        </div>
-    );
-}
-</file>
-
 <file path="app/dashboard/orcamentos/page.tsx">
 export const dynamic = "force-dynamic";
 
@@ -3179,6 +3256,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://precifica.nkwflow.com"),
   title: "Precifica - Simplificando seus orçamentos",
   description: "Facilite a criação e gestão de orçamentos com nossa ferramenta intuitiva e eficiente.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -3257,6 +3337,188 @@ export default function RootLayout({
 }
 </file>
 
+<file path="app/dashboard/orcamentos/[id]/page.tsx">
+export const dynamic = 'force-dynamic';
+
+import { redirect } from 'next/navigation';
+import { createClient } from "@/lib/supabase/server";
+import { DashboardHeader } from '@/components/dashboard-header';
+import { GradeOrcamento } from '@/components/orcamento/grade-orcamento';
+import { HistoricoVersoes } from '@/components/orcamento/historico-versoes';
+import { salvarFluxoOrcamento } from "../actions/salvarFluxoOrcamento";
+import { atualizarTituloOrcamento } from "@/app/dashboard/orcamentos/actions/atualizarTitulo";
+import { revalidatePath } from 'next/cache';
+
+export default async function OrcamentoPage({
+    params,
+    searchParams
+}: {
+    params: { id: string },
+    searchParams: { v?: string }
+}) {
+    const { id } = await params;
+    const { v: versaoIdSolicitada } = await searchParams;
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) redirect('/autenticacao/entrar');
+
+    // 1. Busca Dados Iniciais
+    const [{ data: tiposPapel }, { data: clientes }] = await Promise.all([
+        supabase.from('tipos_papel').select('*').order('nome'),
+        supabase.from('clientes').select('id, nome').order('nome')
+    ]);
+
+    let insumosParaGrade = [];
+    type Orcamento = {
+        id: string;
+        titulo: string;
+        cliente_id: string;
+        // Adicione outros campos relevantes conforme a tabela 'orcamentos'
+    };
+    let orcamentoExistente: Orcamento | null = null;
+    let versoes = [];
+    let quantidadesIniciais = [1000, 3000, 5000];
+
+    // 2. Lógica de Carregamento (Novo vs Existente)
+    if (id === 'novo') {
+        const { data: insumosBase } = await supabase.from('insumos_base').select('*').order('categoria');
+        insumosParaGrade = insumosBase?.map(i => ({ ...i, id: String(i.id), custo_unitario: 0 })) || [];
+    } else {
+        const { data: orc } = await supabase.from('orcamentos').select('*').eq('id', id).single();
+        const { data: vList } = await supabase.from('orcamento_versoes').select('*').eq('orcamento_id', id).order('versao_numero', { ascending: false });
+
+        orcamentoExistente = orc;
+        versoes = vList || [];
+
+        const versaoParaCarregar = versaoIdSolicitada ? versoes.find(v => v.id === versaoIdSolicitada) : versoes[0];
+
+        if (versaoParaCarregar) {
+            const { data: valores } = await supabase
+                .from('orcamento_versao_valores')
+                .select('*, insumos_base(nome, categoria)')
+                .eq('versao_id', versaoParaCarregar.id);
+
+            if (valores && valores.length > 0) {
+                quantidadesIniciais = [...new Set(valores.map(val => val.quantidade_referencia))].sort((a, b) => a - b);
+                const uniqueIds = [...new Set(valores.map(val => val.insumo_id))];
+                insumosParaGrade = uniqueIds.map(insId => {
+                    const item = valores.find(val => val.insumo_id === insId);
+                    return {
+                        id: String(insId),
+                        nome: item.insumos_base.nome,
+                        categoria: item.insumos_base.categoria || 'Geral',
+                        custo_unitario: item.valor_custo_unitario_base
+                    };
+                });
+            }
+        }
+    }
+
+    // --- SERVER ACTIONS ---
+    // Importante: Elas usam os dados passados pelo formulário ou argumentos fixos
+
+    async function handleSalvarVersao(formData: FormData) {
+        'use server'; // OBRIGATÓRIO AQUI
+        
+        const gradeDadosRaw = formData.get('grade_dados') as string;
+        if (!gradeDadosRaw) return;
+
+        const { markup, valores } = JSON.parse(gradeDadosRaw);
+
+        if (!user) {
+            throw new Error("Usuário não autenticado.");
+        }
+        await salvarFluxoOrcamento({
+            orcamentoId: id === 'novo' ? undefined : id, // CORREÇÃO: Passando o ID se existir
+            clienteId: formData.get('clienteId') as string,
+            titulo: formData.get('titulo_form') as string || orcamentoExistente?.titulo || "Novo Orçamento",
+            markup: markup,
+            valores: valores,
+            userId: user.id
+        });
+
+        revalidatePath(`/dashboard/orcamentos/${id}`);
+    }
+
+    async function handleUpdateTitle(formData: FormData) {
+        'use server';
+        const novoTitulo = formData.get('titulo') as string;
+        if (id !== 'novo' && novoTitulo) {
+            await atualizarTituloOrcamento(id, novoTitulo);
+        }
+    }
+
+    return (
+        <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
+            <DashboardHeader />
+
+            {/* Layout Responsivo */}
+            <div className="sm:hidden text-center py-20 bg-zinc-900/50 rounded-3xl border border-zinc-800 my-8">
+                <h2 className="text-white font-bold text-xl">Use um Computador</h2>
+                <p className="text-zinc-500 text-sm">A grade requer mais espaço horizontal.</p>
+            </div>
+
+            <main className="hidden sm:block">
+                {/* Header com Título */}
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-zinc-900/20 p-6 rounded-2xl border border-zinc-800/50">
+                    <div className="flex-1 w-full group">
+                        <label className="text-[10px] font-bold uppercase text-zinc-500 mb-1 block">Nome do Orçamento</label>
+                        <form action={handleUpdateTitle} className="flex items-center gap-4">
+                            <input
+                                name="titulo"
+                                defaultValue={orcamentoExistente?.titulo}
+                                className="bg-transparent text-3xl font-black text-white border-b-2 border-transparent focus:border-blue-500 outline-none flex-1"
+                                required
+                            />
+                            {id !== 'novo' && (
+                                <button type="submit" className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-[10px] font-bold uppercase border border-zinc-700">
+                                    Atualizar Nome
+                                </button>
+                            )}
+                        </form>
+                    </div>
+                </header>
+
+                {versoes.length > 0 && <HistoricoVersoes versoes={versoes} />}
+
+                {/* Formulário Principal */}
+                <form action={handleSalvarVersao}>
+                    {/* Campo para o título caso seja novo */}
+                    <input type="hidden" name="titulo_form" value={orcamentoExistente?.titulo || ""} />
+                    
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
+                        <section className="bg-zinc-900/30 p-6 rounded-2xl border border-zinc-800/50 flex-1 w-full md:max-w-md">
+                            <label className="text-[10px] font-bold uppercase text-zinc-500 mb-2 block">Cliente Associado</label>
+                            <select
+                                name="clienteId"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm"
+                                defaultValue={orcamentoExistente?.cliente_id || ""}
+                                required
+                            >
+                                <option value="" disabled>Selecione um cliente...</option>
+                                {clientes?.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                            </select>
+                        </section>
+
+                        <button type="submit" className="px-8 py-5 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-500 uppercase text-xs">
+                            Salvar Versão
+                        </button>
+                    </div>
+
+                    <GradeOrcamento
+                        tiposPapel={tiposPapel || []}
+                        insumosIniciais={insumosParaGrade}
+                        quantidadesPadrao={quantidadesIniciais}
+                        markupInicial={30}
+                    />
+                </form>
+            </main>
+        </div>
+    );
+}
+</file>
+
 <file path="app/page.tsx">
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -3269,8 +3531,6 @@ export default async function Home() {
   }
   redirect("/autenticacao/entrar");
 }
-
-//console.log('')
 </file>
 
 </files>

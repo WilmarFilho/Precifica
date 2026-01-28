@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://precifica.nkwflow.com"),
   title: "Precifica - Simplificando seus orçamentos",
   description: "Facilite a criação e gestão de orçamentos com nossa ferramenta intuitiva e eficiente.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

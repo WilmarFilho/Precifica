@@ -63,6 +63,31 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
     setExpandedCategories(initExpanded);
   }, [insumosIniciais]);
 
+  // Dentro de grade-orcamento.tsx
+  useEffect(() => {
+    const valoresExport: { insumo_id: string; quantidade_referencia: number; valor_custo_unitario_base: number }[] = [];
+
+    // CORRIGIDO: nome da variável para insumosIniciais
+    insumosIniciais.forEach(insumo => {
+      // Agora percorre TODAS as colunas de quantidades
+      quantidades.forEach(qtd => {
+        valoresExport.push({
+          insumo_id: insumo.id,
+          quantidade_referencia: qtd,
+          valor_custo_unitario_base: custos[insumo.id] || 0
+        });
+      });
+    });
+
+    const hiddenInput = document.getElementById('grade-dados-input') as HTMLInputElement;
+    if (hiddenInput) {
+      hiddenInput.value = JSON.stringify({
+        markup: markup,
+        valores: valoresExport
+      });
+    }
+  }, [insumosIniciais, quantidades, custos, markup]); // CORRIGIDO: dependências
+
   const adicionarColuna = () => {
     const ultimaQtd = quantidades[quantidades.length - 1] || 0;
     setQuantidades([...quantidades, ultimaQtd + 100]);
@@ -131,14 +156,7 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
       <input
         type="hidden"
         name="grade_dados"
-        value={JSON.stringify({
-          markup,
-          valores: insumosIniciais.map(i => ({
-            insumo_id: i.id,
-            quantidade_referencia: 100,
-            valor_custo_unitario_base: custos[i.id] || 0
-          }))
-        })}
+        id="grade-dados-input"
       />
 
       {/* TOOLBAR */}
@@ -222,9 +240,9 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
                               />
                             </div>
                             {showCalculator && (
-                              <button 
-                                type="button" 
-                                onClick={() => { setActiveInsumoId(item.id); setIsModalOpen(true); }} 
+                              <button
+                                type="button"
+                                onClick={() => { setActiveInsumoId(item.id); setIsModalOpen(true); }}
                                 className="p-2 bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 rounded-lg transition"
                               >
                                 <Calculator size={16} />
@@ -276,9 +294,9 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
                 <Calculator className="text-blue-500" size={20} />
                 Calculadora de Folhas
               </h3>
-              <button 
-                type="button" 
-                onClick={() => { setIsModalOpen(false); setSearchTerm(''); }} 
+              <button
+                type="button"
+                onClick={() => { setIsModalOpen(false); setSearchTerm(''); }}
                 className="text-zinc-500 hover:text-white transition-colors"
               >
                 <X size={20} />
