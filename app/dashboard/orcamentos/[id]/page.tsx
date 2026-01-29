@@ -14,11 +14,13 @@ export default async function OrcamentoPage({
     searchParams
 }: {
     params: { id: string },
-    searchParams: { v?: string }
+    searchParams: { v?: string, edit?: string }
 }) {
     const { id } = await params;
-    const { v: versaoIdSolicitada } = await searchParams;
+    const { v: versaoIdSolicitada, edit } = await searchParams;
     const supabase = await createClient();
+
+    const isVisualizandoHistorico = !!versaoIdSolicitada && edit !== 'true';
 
     const { data: tiposPapel } = await supabase
         .from('tipos_papel')
@@ -33,66 +35,89 @@ export default async function OrcamentoPage({
     let insumosParaGrade = [];
     let orcamentoExistente: { id: string; titulo: string; cliente_id: string } | null = null;
     let versoes = [];
-    let quantidadesIniciais = [1000, 3000, 5000];
+    let quantidadesIniciais = [100]; // Padrão para novo orçamento é apenas 100
+
+    // 1. Carrega SEMPRE todos os insumos base primeiro
+    const { data: todosInsumosBase } = await supabase
+        .from('insumos_base')
+        .select('*')
+        .order('categoria');
 
     if (id === 'novo') {
-        const { data: insumosBase } = await supabase.from('insumos_base').select('*').order('categoria');
-        insumosParaGrade = insumosBase?.map(i => ({ ...i, id: String(i.id), custo_unitario: 0 })) || [];
+        // Para novo orçamento: todos os insumos com custo 0
+        insumosParaGrade = todosInsumosBase?.map(i => ({
+            ...i,
+            id: String(i.id),
+            custo_unitario: 0
+        })) || [];
     } else {
+
+        // BUSCAR COLUNAS SALVAS
+        const { data: colunasSalvas } = await supabase
+            .from('orcamento_colunas')
+            .select('quantidade')
+            .eq('orcamento_id', id)
+            .order('ordem', { ascending: true });
+
+        // Se houver colunas no banco, usa elas, senão usa [100]
+        quantidadesIniciais = colunasSalvas && colunasSalvas.length > 0
+            ? colunasSalvas.map(c => c.quantidade)
+            : [100];
+
         const { data: orc } = await supabase.from('orcamentos').select('*').eq('id', id).single();
         const { data: vList } = await supabase.from('orcamento_versoes').select('*').eq('orcamento_id', id).order('versao_numero', { ascending: false });
 
         orcamentoExistente = orc;
         versoes = vList || [];
 
+        // Se tiver v na URL, usa ela. Se não (ou se for ?edit=true vindo do dashboard), entre na tela de criar nova versão
         const versaoParaCarregar = versaoIdSolicitada
             ? versoes.find(v => v.id === versaoIdSolicitada)
-            : versoes[0];
+            : null;
 
         if (versaoParaCarregar) {
-            const { data: valores } = await supabase
+            const { data: valoresSalvos } = await supabase
                 .from('orcamento_versao_valores')
-                .select('*, insumos_base(nome, categoria)')
+                .select('*')
                 .eq('versao_id', versaoParaCarregar.id);
 
-            if (valores && valores.length > 0) {
-                quantidadesIniciais = [...new Set(valores.map(val => val.quantidade_referencia))].sort((a, b) => a - b);
-                const uniqueIds = [...new Set(valores.map(val => val.insumo_id))];
-                insumosParaGrade = uniqueIds.map(insId => {
-                    const item = valores.find(val => val.insumo_id === insId);
-                    return {
-                        id: String(insId),
-                        nome: item.insumos_base.nome,
-                        categoria: item.insumos_base.categoria || 'Geral',
-                        custo_unitario: item.valor_custo_unitario_base
-                    };
-                });
-            }
+
+            // Mapeia TODOS os insumos base, injetando o valor salvo onde houver
+            insumosParaGrade = (todosInsumosBase || []).map(base => {
+                const valorSalvo = valoresSalvos?.find(v => v.insumo_id === base.id);
+                return {
+                    id: String(base.id),
+                    nome: base.nome,
+                    categoria: base.categoria || 'Geral',
+                    // Se achou valor no banco, usa ele. Se não, custo 0 para o novo rascunho.
+                    custo_unitario: valorSalvo ? valorSalvo.valor_custo_unitario_base : 0
+                };
+            });
+        } else {
+            // Fallback caso o orçamento exista mas não tenha versões (segurança)
+            insumosParaGrade = todosInsumosBase?.map(i => ({ ...i, id: String(i.id), custo_unitario: 0 })) || [];
         }
     }
 
     async function handleSalvarVersao(formData: FormData) {
         'use server';
-
         const gradeDadosRaw = formData.get('grade_dados') as string;
         if (!gradeDadosRaw) return;
-        const { markup, valores } = JSON.parse(gradeDadosRaw);
-
-        // Agora pegamos o 'titulo' que vem do input conectado via ID de formulário
+        const { markup, valores, quantidadesVisiveis } = JSON.parse(gradeDadosRaw);
         const tituloFinal = formData.get('titulo') as string || "Novo Orçamento";
 
         const payload = {
             titulo: tituloFinal,
             clienteId: formData.get('clienteId') as string,
             valores: valores,
+            quantidadesVisiveis: quantidadesVisiveis,
             userId: user!.id,
             markup: markup,
-            ...(id !== 'novo' ? { orcamentoId: id } : {})
+            ...(id !== 'novo' ? { orcamentoId: id } : {}),
         };
 
         await salvarFluxoOrcamento(payload);
-        // Use the Next.js redirect instead of router.push in a server action
-        redirect('/dashboard/orcamentos');
+        redirect(`/dashboard/orcamentos/${id !== 'novo' ? id : ''}`);
     }
 
     async function handleUpdateTitle(formData: FormData) {
@@ -107,13 +132,6 @@ export default async function OrcamentoPage({
         <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
             <DashboardHeader />
 
-            <div className="sm:hidden flex flex-col items-center justify-center text-center py-20 px-6 bg-zinc-900/50 rounded-3xl border border-zinc-800 my-8">
-                <h2 className="text-white font-bold text-xl mb-2">Tela muito pequena</h2>
-                <p className="text-zinc-500 text-sm leading-relaxed">
-                    A grade de orçamentos requer mais espaço horizontal.
-                </p>
-            </div>
-
             <main className="hidden sm:block max-w-7xl mx-auto px-6 py-8">
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-zinc-900/20 p-6 rounded-2xl border border-zinc-800/50">
                     <div className="flex-1 w-full group">
@@ -123,30 +141,31 @@ export default async function OrcamentoPage({
                         <form action={handleUpdateTitle} className="flex items-center gap-4">
                             <input
                                 name="titulo"
-                                form="form-principal" // CONECTA este campo ao formulário de salvar abaixo
+                                // REMOVA A LINHA ABAIXO:
+                                // form="form-principal" 
                                 defaultValue={orcamentoExistente?.titulo}
                                 placeholder="Ex: Cartão de Visita Premium..."
                                 className="bg-transparent text-3xl font-black text-white border-b-2 border-transparent focus:border-blue-500 outline-none transition-all py-1 flex-1"
                                 required
+                                disabled={isVisualizandoHistorico}
                             />
-                            {id !== 'novo' && (
+                            {id !== 'novo' && !isVisualizandoHistorico && (
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase border border-zinc-700 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase border border-zinc-700 transition"
                                 >
                                     Atualizar Nome
                                 </button>
                             )}
                         </form>
                     </div>
-
-                    <div className="text-right hidden md:block">
-                        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">ID do Registro</p>
-                        <p className="font-mono text-zinc-500 text-xs">{id === 'novo' ? 'PENDENTE' : id}</p>
-                    </div>
                 </header>
 
-                {versoes.length > 0 && <HistoricoVersoes versoes={versoes} />}
+                {versoes.length > 0 && (
+                    <HistoricoVersoes
+                        versoes={versoes}
+                    />
+                )}
 
                 <form action={handleSalvarVersao} id="form-principal">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
@@ -154,16 +173,18 @@ export default async function OrcamentoPage({
                             <label className="text-[10px] font-bold uppercase text-zinc-500 mb-2 block tracking-widest">Cliente Associado</label>
                             <select
                                 name="clienteId"
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 outline-none appearance-none cursor-pointer text-sm"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 outline-none appearance-none cursor-pointer text-sm disabled:opacity-50"
                                 defaultValue={orcamentoExistente?.cliente_id || ""}
                                 required
+                                disabled={isVisualizandoHistorico}
                             >
                                 <option value="" disabled>Selecione um cliente...</option>
                                 {clientes?.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                             </select>
                         </section>
 
-                        <BotaoSalvar />
+                        {/* Só exibe o botão salvar se não estiver visualizando histórico antigo */}
+                        {!isVisualizandoHistorico && <BotaoSalvar />}
                     </div>
 
                     <GradeOrcamento
@@ -171,9 +192,13 @@ export default async function OrcamentoPage({
                         insumosIniciais={insumosParaGrade}
                         quantidadesPadrao={quantidadesIniciais}
                         markupInicial={30}
+                        readOnly={isVisualizandoHistorico} // Passa o estado de leitura
                     />
                 </form>
             </main>
         </div>
     );
 }
+
+
+

@@ -59,6 +59,35 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamento_colunas: {
+        Row: {
+          id: string
+          orcamento_id: string | null
+          ordem: number | null
+          quantidade: number
+        }
+        Insert: {
+          id?: string
+          orcamento_id?: string | null
+          ordem?: number | null
+          quantidade: number
+        }
+        Update: {
+          id?: string
+          orcamento_id?: string | null
+          ordem?: number | null
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_colunas_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orcamento_versao_valores: {
         Row: {
           id: string

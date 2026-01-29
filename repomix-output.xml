@@ -71,6 +71,7 @@ components/modal/novo-cliente-modal.tsx
 components/orcamento/grade-orcamento.tsx
 components/orcamento/historico-versoes.tsx
 components/ui/badge.tsx
+components/ui/botaoSalvar.tsx
 components/ui/button.tsx
 components/ui/card.tsx
 components/ui/checkbox.tsx
@@ -97,13 +98,6 @@ tsconfig.json
 
 <files>
 This section contains the contents of the repository's files.
-
-<file path="app/icon.svg">
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="32" height="32" rx="16" fill="#2563EB"/>
-<path d="M18.7778 16C18.7778 15.4396 18.6149 14.8918 18.3096 14.4259C18.0044 13.9599 17.5706 13.5968 17.063 13.3823C16.5554 13.1679 15.9969 13.1118 15.4581 13.2211C14.9192 13.3304 14.4243 13.6003 14.0358 13.9965C13.6473 14.3928 13.3828 14.8976 13.2756 15.4472C13.1684 15.9969 13.2234 16.5665 13.4337 17.0843C13.6439 17.602 13.9999 18.0445 14.4567 18.3558C14.9136 18.6672 15.4506 18.8333 16 18.8333C16.7367 18.8333 17.4433 18.5348 17.9642 18.0035C18.4851 17.4721 18.7778 16.7514 18.7778 16ZM14.3333 16C14.3333 15.6638 14.4311 15.3351 14.6142 15.0555C14.7974 14.776 15.0577 14.5581 15.3622 14.4294C15.6667 14.3007 16.0018 14.2671 16.3252 14.3327C16.6485 14.3983 16.9454 14.5602 17.1785 14.7979C17.4116 15.0357 17.5703 15.3386 17.6346 15.6683C17.699 15.9981 17.6659 16.3399 17.5398 16.6506C17.4137 16.9612 17.2 17.2267 16.926 17.4135C16.6519 17.6003 16.3296 17.7 16 17.7C15.558 17.7 15.134 17.5209 14.8215 17.2021C14.5089 16.8833 14.3333 16.4509 14.3333 16ZM21 23.9333V8.06667C21 7.91638 20.9415 7.77224 20.8373 7.66597C20.7331 7.5597 20.5918 7.5 20.4444 7.5H11.5556C11.4082 7.5 11.2669 7.5597 11.1627 7.66597C11.0585 7.77224 11 7.91638 11 8.06667L11 23.9333C11 24.0836 11.0585 24.2278 11.1627 24.334C11.2669 24.4403 11.4082 24.5 11.5556 24.5H20.4444C20.5918 24.5 20.7331 24.4403 20.8373 24.334C20.9415 24.2278 21 24.0836 21 23.9333ZM12.1111 20.6502V11.3498C12.7419 11.1595 13.3161 10.8113 13.7812 10.3369C14.2464 9.8624 14.5878 9.27678 14.7743 8.63333H17.2257C17.4122 9.27678 17.7536 9.8624 18.2188 10.3369C18.6839 10.8113 19.2581 11.1595 19.8889 11.3498V20.6502C19.2581 20.8405 18.6839 21.1887 18.2188 21.6631C17.7536 22.1376 17.4122 22.7232 17.2257 23.3667H14.7743C14.5878 22.7232 14.2464 22.1376 13.7812 21.6631C13.3161 21.1887 12.7419 20.8405 12.1111 20.6502ZM18.4049 23.3667C18.6914 22.687 19.2225 22.1452 19.8889 21.853V23.3667H18.4049ZM19.8889 10.147C19.2225 9.85478 18.6914 9.31302 18.4049 8.63333H19.8889V10.147ZM13.5951 8.63333C13.3086 9.31302 12.7775 9.85478 12.1111 10.147V8.63333H13.5951ZM12.1111 21.853C12.7775 22.1452 13.3086 22.687 13.5951 23.3667H12.1111L12.1111 21.853Z" fill="white"/>
-</svg>
-</file>
 
 <file path=".github/workflows/deploy.yml">
 name: Deploy Precifica
@@ -334,6 +328,13 @@ export async function atualizarTituloOrcamento(id: string, novoTitulo: string) {
   revalidatePath(`/dashboard/orcamentos/${id}`);
   return { ok: true };
 }
+</file>
+
+<file path="app/icon.svg">
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="32" height="32" rx="16" fill="#2563EB"/>
+<path d="M18.7778 16C18.7778 15.4396 18.6149 14.8918 18.3096 14.4259C18.0044 13.9599 17.5706 13.5968 17.063 13.3823C16.5554 13.1679 15.9969 13.1118 15.4581 13.2211C14.9192 13.3304 14.4243 13.6003 14.0358 13.9965C13.6473 14.3928 13.3828 14.8976 13.2756 15.4472C13.1684 15.9969 13.2234 16.5665 13.4337 17.0843C13.6439 17.602 13.9999 18.0445 14.4567 18.3558C14.9136 18.6672 15.4506 18.8333 16 18.8333C16.7367 18.8333 17.4433 18.5348 17.9642 18.0035C18.4851 17.4721 18.7778 16.7514 18.7778 16ZM14.3333 16C14.3333 15.6638 14.4311 15.3351 14.6142 15.0555C14.7974 14.776 15.0577 14.5581 15.3622 14.4294C15.6667 14.3007 16.0018 14.2671 16.3252 14.3327C16.6485 14.3983 16.9454 14.5602 17.1785 14.7979C17.4116 15.0357 17.5703 15.3386 17.6346 15.6683C17.699 15.9981 17.6659 16.3399 17.5398 16.6506C17.4137 16.9612 17.2 17.2267 16.926 17.4135C16.6519 17.6003 16.3296 17.7 16 17.7C15.558 17.7 15.134 17.5209 14.8215 17.2021C14.5089 16.8833 14.3333 16.4509 14.3333 16ZM21 23.9333V8.06667C21 7.91638 20.9415 7.77224 20.8373 7.66597C20.7331 7.5597 20.5918 7.5 20.4444 7.5H11.5556C11.4082 7.5 11.2669 7.5597 11.1627 7.66597C11.0585 7.77224 11 7.91638 11 8.06667L11 23.9333C11 24.0836 11.0585 24.2278 11.1627 24.334C11.2669 24.4403 11.4082 24.5 11.5556 24.5H20.4444C20.5918 24.5 20.7331 24.4403 20.8373 24.334C20.9415 24.2278 21 24.0836 21 23.9333ZM12.1111 20.6502V11.3498C12.7419 11.1595 13.3161 10.8113 13.7812 10.3369C14.2464 9.8624 14.5878 9.27678 14.7743 8.63333H17.2257C17.4122 9.27678 17.7536 9.8624 18.2188 10.3369C18.6839 10.8113 19.2581 11.1595 19.8889 11.3498V20.6502C19.2581 20.8405 18.6839 21.1887 18.2188 21.6631C17.7536 22.1376 17.4122 22.7232 17.2257 23.3667H14.7743C14.5878 22.7232 14.2464 22.1376 13.7812 21.6631C13.3161 21.1887 12.7419 20.8405 12.1111 20.6502ZM18.4049 23.3667C18.6914 22.687 19.2225 22.1452 19.8889 21.853V23.3667H18.4049ZM19.8889 10.147C19.2225 9.85478 18.6914 9.31302 18.4049 8.63333H19.8889V10.147ZM13.5951 8.63333C13.3086 9.31302 12.7775 9.85478 12.1111 10.147V8.63333H13.5951ZM12.1111 21.853C12.7775 22.1452 13.3086 22.687 13.5951 23.3667H12.1111L12.1111 21.853Z" fill="white"/>
+</svg>
 </file>
 
 <file path="components.json">
@@ -958,6 +959,31 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 export { Badge, badgeVariants };
+</file>
+
+<file path="components/ui/botaoSalvar.tsx">
+'use client';
+import { useFormStatus } from 'react-dom';
+import { Loader2, Plus } from 'lucide-react';
+
+export function BotaoSalvar() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button 
+      type="submit" 
+      disabled={pending}
+      className="w-full md:w-auto px-8 py-5 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition text-xs uppercase flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {pending ? (
+        <Loader2 className="w-5 h-5 animate-spin" />
+      ) : (
+        <Plus className="w-5 h-5" />
+      )}
+      {pending ? 'Salvando...' : 'Salvar Versão'}
+    </button>
+  );
+}
 </file>
 
 <file path="components/ui/button.tsx">
@@ -1915,58 +1941,6 @@ export default function PaginaRedefinirSenha() {
 }
 </file>
 
-<file path="components/orcamento/historico-versoes.tsx">
-'use client';
-
-import { Database } from "@/lib/database.types";
-import { useRouter, useSearchParams } from "next/navigation";
-
-type Versao = Database['public']['Tables']['orcamento_versoes']['Row'];
-
-export function HistoricoVersoes({ versoes }: { versoes: Versao[] }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  
-  // A versão selecionada vem da URL (?v=...), se não houver, a primeira (mais recente) é a ativa
-  const versaoAtivaId = searchParams.get('v') || versoes[0]?.id;
-
-  const handleTrocarVersao = (versaoId: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('v', versaoId);
-    router.push(`?${params.toString()}`);
-  };
-
-  return (
-    <div className="flex flex-wrap gap-2 mb-6">
-      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest w-full mb-1">
-        Histórico de Versões (Clique para visualizar)
-      </p>
-      {versoes.map((v) => {
-        const isSelected = v.id === versaoAtivaId;
-        return (
-          <button
-            key={v.id}
-            type="button"
-            onClick={() => handleTrocarVersao(v.id)}
-            className={`px-3 py-1.5 rounded-lg border transition flex items-center gap-2 ${
-              isSelected 
-                ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20" 
-                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600"
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-blue-500"}`}></span>
-            <span className="text-xs font-bold font-mono">v{v.versao_numero}</span>
-            <span className={`text-[9px] ${isSelected ? "text-blue-100" : "text-zinc-600"}`}>
-              {new Date(v.created_at!).toLocaleDateString('pt-BR')}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-</file>
-
 <file path="docker-compose.yml">
 services:
   precifica-app:
@@ -2469,6 +2443,261 @@ export default {
 } satisfies Config;
 </file>
 
+<file path="components/dashboard-header.tsx">
+'use client';
+
+import { useState } from "react";
+import Link from "next/link";
+import { LogoutButton } from "@/components/buttons/logout-button";
+import { Menu, X } from "lucide-react";
+
+export function DashboardHeader() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const navLinks = [
+    { href: "/dashboard/orcamentos", label: "Orçamentos" },
+    { href: "/dashboard/clientes", label: "Clientes" },
+  ];
+
+  return (
+    // Removido max-w-7xl e mx-auto daqui, pois o pai já controla isso
+    <header className="w-full relative z-50 mb-8">
+      <div 
+        className={`w-full flex items-center justify-between py-4 px-6 md:px-10 transition-all duration-300 ${
+          isMenuOpen ? "rounded-t-3xl border-b-0" : "rounded-full"
+        } border border-white/10 bg-white/5 backdrop-blur-lg shadow-md`}
+        style={{ background: "rgba(255,255,255,0.07)" }}
+      >
+        <Link href="/dashboard/orcamentos" className="font-extrabold text-lg tracking-wide text-white uppercase shrink-0">
+          Precifica
+        </Link>
+
+        <nav className="hidden md:flex gap-8">
+          {navLinks.map((link) => (
+            <Link 
+              key={link.href} 
+              href={link.href} 
+              className="text-white/80 hover:text-white font-medium transition text-sm uppercase tracking-wider"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="hidden md:block">
+          <LogoutButton />
+        </div>
+
+        <button className="md:hidden text-white p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {isMenuOpen && (
+        <div className="md:hidden absolute left-0 right-0 border border-t-0 border-white/10 bg-[#121214] backdrop-blur-xl rounded-b-3xl shadow-xl overflow-hidden">
+          <nav className="flex flex-col p-4 gap-2">
+            {navLinks.map((link) => (
+              <Link 
+                key={link.href} 
+                href={link.href}
+                onClick={() => setIsMenuOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/5 p-4 rounded-xl font-medium transition text-sm uppercase"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="border-t border-white/10 mt-2 pt-4 pb-2 px-4">
+              <LogoutButton />
+            </div>
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+}
+</file>
+
+<file path="components/orcamento/historico-versoes.tsx">
+'use client';
+
+import { Database } from "@/lib/database.types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react"; // Adicionado para gerenciar loading
+
+type Versao = Database['public']['Tables']['orcamento_versoes']['Row'];
+
+export function HistoricoVersoes({ versoes }: { versoes: Versao[] }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
+  const versaoAtivaId = searchParams.get('v') || versoes[0]?.id;
+
+  const handleTrocarVersao = (versaoId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('v', versaoId);
+
+    // startTransition avisa ao Next.js que uma mudança de estado está ocorrendo
+    // Isso geralmente aciona o NextTopLoader se configurado corretamente
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+    });
+  };
+
+  return (
+    <div className={`flex flex-wrap gap-2 mb-6 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
+      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest w-full mb-1">
+        Histórico de Versões (Clique para visualizar)
+      </p>
+      {versoes.map((v) => {
+        const isSelected = v.id === versaoAtivaId;
+        return (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => handleTrocarVersao(v.id)}
+            className={`px-3 py-1.5 rounded-lg border transition flex items-center gap-2 ${isSelected
+                ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20"
+                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600"
+              }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-blue-500"}`}></span>
+            <span className="text-xs font-bold font-mono">v{v.versao_numero}</span>
+            <span className={`text-[9px] ${isSelected ? "text-blue-100" : "text-zinc-600"}`}>
+              {new Date(v.created_at!).toLocaleDateString('pt-BR')}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+    output: 'standalone',
+};
+
+export default nextConfig;
+</file>
+
+<file path="app/dashboard/clientes/page.tsx">
+export const dynamic = "force-dynamic";
+
+import { DashboardHeader } from "@/components/dashboard-header";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { NovoClienteModal } from "@/components/modal/novo-cliente-modal";
+
+export default async function ClientesPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
+  const supabase = await createClient();
+
+  // 1. Verificação de Autenticação
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/autenticacao/entrar');
+
+  // 2. Termo de Busca
+  const query = (await searchParams).q || "";
+
+  // 3. Busca no Supabase
+  let dbQuery = supabase
+    .from('clientes')
+    .select('id, nome, created_at')
+    .eq('user_id', user.id)
+    .order('nome', { ascending: true });
+
+  if (query) {
+    dbQuery = dbQuery.ilike('nome', `%${query}%`);
+  }
+
+  const { data: clientes } = await dbQuery;
+
+  return (
+    // CONTÊINER PAI: px-4 md:px-8 para alinhar perfeitamente com a borda externa do Header
+    <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
+      <DashboardHeader />
+        
+      {/* SUB-CONTÊINER: px-2 para alinhar o conteúdo interno com o texto interno do Header */}
+      <div className="px-2">
+        
+        {/* BARRA DE AÇÕES E BUSCA */}
+        <div className="px-8  flex flex-col md:flex-row items-center gap-4 mb-10 w-full mt-10">
+          
+          {/* BOTÃO QUE ABRE O MODAL (Substituindo o Link antigo) */}
+          <NovoClienteModal />
+
+          <form method="GET" className="flex-1 w-full relative">
+            <input
+              type="text"
+              name="q"
+              defaultValue={query}
+              placeholder="Buscar clientes pelo nome..."
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition placeholder:text-zinc-600"
+            />
+            <svg className="w-5 h-5 text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </form>
+        </div>
+
+        {/* GRID DE CLIENTES */}
+        <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {clientes && clientes.length > 0 ? (
+            clientes.map((cliente) => (
+              <div 
+                key={cliente.id} 
+                className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition flex flex-col gap-4 min-h-[160px]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="w-12 h-12 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-500 group-hover:bg-blue-600/20 transition">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-tighter">
+                    ID: {cliente.id.toString().slice(0, 8)}...
+                  </span>
+                </div>
+
+                <div className="flex-1">
+                  <h3 className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1">
+                    {cliente.nome}
+                  </h3>
+                  <p className="text-zinc-500 text-xs">
+                    Cliente desde: {new Date(cliente.created_at).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-zinc-800/50 flex justify-end">
+                  
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-24 border-2 border-dashed border-zinc-800 rounded-3xl">
+              <p className="text-zinc-500 font-medium">Nenhum cliente encontrado.</p>
+              {query && (
+                <Link href="/dashboard/clientes" className="text-blue-500 text-[10px] uppercase font-bold mt-2 inline-block hover:underline tracking-widest">
+                  Limpar busca
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="app/dashboard/orcamentos/actions/salvarFluxoOrcamento.ts">
 "use server";
 
@@ -2556,76 +2785,100 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 }
 </file>
 
-<file path="components/dashboard-header.tsx">
-'use client';
+<file path="app/dashboard/orcamentos/page.tsx">
+export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { DashboardHeader } from "@/components/dashboard-header";
 import Link from "next/link";
-import { LogoutButton } from "@/components/buttons/logout-button";
-import { Menu, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-export function DashboardHeader() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+export default async function DashboardOrcamentosPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/autenticacao/entrar');
 
-  const navLinks = [
-    { href: "/dashboard/orcamentos", label: "Orçamentos" },
-    { href: "/dashboard/clientes", label: "Clientes" },
-  ];
+  const query = (await searchParams).q || "";
+
+  const { data: clientes } = await supabase.from('clientes').select('id, nome');
+  const clientesMap = new Map((clientes || []).map(c => [c.id, c.nome]));
+  
+  const idsClientesFiltrados = (clientes || [])
+    .filter(c => c.nome.toLowerCase().includes(query.toLowerCase()))
+    .map(c => c.id);
+
+  let orcamentosQuery = supabase
+    .from('orcamentos')
+    .select('id, titulo, cliente_id, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (query) {
+    const filterParts = [`titulo.ilike.%${query}%`];
+    if (idsClientesFiltrados.length > 0) {
+      filterParts.push(`cliente_id.in.(${idsClientesFiltrados.join(',')})`);
+    }
+    orcamentosQuery = orcamentosQuery.or(filterParts.join(','));
+  }
+
+  const { data: orcamentos } = await orcamentosQuery;
 
   return (
-    // Removido max-w-7xl e mx-auto daqui, pois o pai já controla isso
-    <header className="w-full relative z-50 mb-8">
-      <div 
-        className={`w-full flex items-center justify-between py-4 px-6 md:px-10 transition-all duration-300 ${
-          isMenuOpen ? "rounded-t-3xl border-b-0" : "rounded-full"
-        } border border-white/10 bg-white/5 backdrop-blur-lg shadow-md`}
-        style={{ background: "rgba(255,255,255,0.07)" }}
-      >
-        <Link href="/dashboard/orcamentos" className="font-extrabold text-lg tracking-wide text-white uppercase shrink-0">
-          Precifica
-        </Link>
+    // O segredo do alinhamento está nestes paddings (px-6 md:px-10) que devem bater com o conteúdo do Header
+    <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
+      <DashboardHeader />
+        
+        {/* Barra de Busca */}
+        <div className="px-8 flex flex-col md:flex-row items-center gap-4 mb-10 w-full">
+          <Link href="/dashboard/orcamentos/novo" className="w-full md:w-auto">
+            <button className="w-full md:w-auto bg-blue-600 text-white font-bold px-6 py-3.5 rounded-xl shadow-lg shadow-blue-900/20 hover:bg-blue-500 transition uppercase text-xs flex items-center justify-center gap-2">
+               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+               Novo Orçamento
+            </button>
+          </Link>
 
-        <nav className="hidden md:flex gap-8">
-          {navLinks.map((link) => (
-            <Link 
-              key={link.href} 
-              href={link.href} 
-              className="text-white/80 hover:text-white font-medium transition text-sm uppercase tracking-wider"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden md:block">
-          <LogoutButton />
+          <form method="GET" className="flex-1 w-full relative">
+            <input
+              type="text"
+              name="q"
+              defaultValue={query}
+              placeholder="Buscar por título ou nome do cliente..."
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+            />
+            <svg className="w-5 h-5 text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </form>
         </div>
 
-        <button className="md:hidden text-white p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {isMenuOpen && (
-        <div className="md:hidden absolute left-0 right-0 border border-t-0 border-white/10 bg-[#121214] backdrop-blur-xl rounded-b-3xl shadow-xl overflow-hidden">
-          <nav className="flex flex-col p-4 gap-2">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.href} 
-                href={link.href}
-                onClick={() => setIsMenuOpen(false)}
-                className="text-white/80 hover:text-white hover:bg-white/5 p-4 rounded-xl font-medium transition text-sm uppercase"
-              >
-                {link.label}
-              </Link>
-            ))}
-            <div className="border-t border-white/10 mt-2 pt-4 pb-2 px-4">
-              <LogoutButton />
+        {/* Grid de Cards */}
+        <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {(orcamentos || []).map((orc) => (
+            <div key={orc.id} className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition flex flex-col gap-4">
+              <div className="flex-1">
+                <div className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1 line-clamp-2">{orc.titulo}</div>
+                <div className="text-zinc-400 text-sm flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-700"></span>
+                  Cliente: <span className="text-zinc-200">{clientesMap.get(orc.cliente_id) || "Desconhecido"}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center mt-auto pt-4 border-t border-zinc-800/50">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                  {orc.created_at ? new Date(orc.created_at).toLocaleDateString('pt-BR') : '-'}
+                </span>
+                <Link href={`/dashboard/orcamentos/${orc.id}`} className="px-4 py-2 rounded-lg bg-zinc-800 text-white text-[10px] font-bold uppercase hover:bg-zinc-700 transition">
+                  Ver Detalhes
+                </Link>
+              </div>
             </div>
-          </nav>
+          ))}
         </div>
-      )}
-    </header>
+    
+    </div>
   );
 }
 </file>
@@ -2696,6 +2949,31 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
     setExpandedCategories(initExpanded);
   }, [insumosIniciais]);
 
+  // Dentro de grade-orcamento.tsx
+  useEffect(() => {
+    const valoresExport: { insumo_id: string; quantidade_referencia: number; valor_custo_unitario_base: number }[] = [];
+
+    // CORRIGIDO: nome da variável para insumosIniciais
+    insumosIniciais.forEach(insumo => {
+      // Agora percorre TODAS as colunas de quantidades
+      quantidades.forEach(qtd => {
+        valoresExport.push({
+          insumo_id: insumo.id,
+          quantidade_referencia: qtd,
+          valor_custo_unitario_base: custos[insumo.id] || 0
+        });
+      });
+    });
+
+    const hiddenInput = document.getElementById('grade-dados-input') as HTMLInputElement;
+    if (hiddenInput) {
+      hiddenInput.value = JSON.stringify({
+        markup: markup,
+        valores: valoresExport
+      });
+    }
+  }, [insumosIniciais, quantidades, custos, markup]); // CORRIGIDO: dependências
+
   const adicionarColuna = () => {
     const ultimaQtd = quantidades[quantidades.length - 1] || 0;
     setQuantidades([...quantidades, ultimaQtd + 100]);
@@ -2764,14 +3042,7 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
       <input
         type="hidden"
         name="grade_dados"
-        value={JSON.stringify({
-          markup,
-          valores: insumosIniciais.map(i => ({
-            insumo_id: i.id,
-            quantidade_referencia: 100,
-            valor_custo_unitario_base: custos[i.id] || 0
-          }))
-        })}
+        id="grade-dados-input"
       />
 
       {/* TOOLBAR */}
@@ -3023,272 +3294,6 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
 }
 </file>
 
-<file path="next.config.ts">
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-    output: 'standalone',
-};
-
-export default nextConfig;
-</file>
-
-<file path="app/dashboard/clientes/page.tsx">
-export const dynamic = "force-dynamic";
-
-import { DashboardHeader } from "@/components/dashboard-header";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { NovoClienteModal } from "@/components/modal/novo-cliente-modal";
-
-export default async function ClientesPage({
-  searchParams,
-}: {
-  searchParams: { q?: string };
-}) {
-  const supabase = await createClient();
-
-  // 1. Verificação de Autenticação
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/autenticacao/entrar');
-
-  // 2. Termo de Busca
-  const query = (await searchParams).q || "";
-
-  // 3. Busca no Supabase
-  let dbQuery = supabase
-    .from('clientes')
-    .select('id, nome, created_at')
-    .eq('user_id', user.id)
-    .order('nome', { ascending: true });
-
-  if (query) {
-    dbQuery = dbQuery.ilike('nome', `%${query}%`);
-  }
-
-  const { data: clientes } = await dbQuery;
-
-  return (
-    // CONTÊINER PAI: px-4 md:px-8 para alinhar perfeitamente com a borda externa do Header
-    <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
-      <DashboardHeader />
-        
-      {/* SUB-CONTÊINER: px-2 para alinhar o conteúdo interno com o texto interno do Header */}
-      <div className="px-2">
-        
-        {/* BARRA DE AÇÕES E BUSCA */}
-        <div className="px-8  flex flex-col md:flex-row items-center gap-4 mb-10 w-full mt-10">
-          
-          {/* BOTÃO QUE ABRE O MODAL (Substituindo o Link antigo) */}
-          <NovoClienteModal />
-
-          <form method="GET" className="flex-1 w-full relative">
-            <input
-              type="text"
-              name="q"
-              defaultValue={query}
-              placeholder="Buscar clientes pelo nome..."
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition placeholder:text-zinc-600"
-            />
-            <svg className="w-5 h-5 text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </form>
-        </div>
-
-        {/* GRID DE CLIENTES */}
-        <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {clientes && clientes.length > 0 ? (
-            clientes.map((cliente) => (
-              <div 
-                key={cliente.id} 
-                className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition flex flex-col gap-4 min-h-[160px]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-500 group-hover:bg-blue-600/20 transition">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-tighter">
-                    ID: {cliente.id.toString().slice(0, 8)}...
-                  </span>
-                </div>
-
-                <div className="flex-1">
-                  <h3 className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1">
-                    {cliente.nome}
-                  </h3>
-                  <p className="text-zinc-500 text-xs">
-                    Cliente desde: {new Date(cliente.created_at).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-
-                <div className="mt-auto pt-4 border-t border-zinc-800/50 flex justify-end">
-                  
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-24 border-2 border-dashed border-zinc-800 rounded-3xl">
-              <p className="text-zinc-500 font-medium">Nenhum cliente encontrado.</p>
-              {query && (
-                <Link href="/dashboard/clientes" className="text-blue-500 text-[10px] uppercase font-bold mt-2 inline-block hover:underline tracking-widest">
-                  Limpar busca
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="app/dashboard/orcamentos/page.tsx">
-export const dynamic = "force-dynamic";
-
-import { DashboardHeader } from "@/components/dashboard-header";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-
-export default async function DashboardOrcamentosPage({
-  searchParams,
-}: {
-  searchParams: { q?: string };
-}) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/autenticacao/entrar');
-
-  const query = (await searchParams).q || "";
-
-  const { data: clientes } = await supabase.from('clientes').select('id, nome');
-  const clientesMap = new Map((clientes || []).map(c => [c.id, c.nome]));
-  
-  const idsClientesFiltrados = (clientes || [])
-    .filter(c => c.nome.toLowerCase().includes(query.toLowerCase()))
-    .map(c => c.id);
-
-  let orcamentosQuery = supabase
-    .from('orcamentos')
-    .select('id, titulo, cliente_id, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (query) {
-    const filterParts = [`titulo.ilike.%${query}%`];
-    if (idsClientesFiltrados.length > 0) {
-      filterParts.push(`cliente_id.in.(${idsClientesFiltrados.join(',')})`);
-    }
-    orcamentosQuery = orcamentosQuery.or(filterParts.join(','));
-  }
-
-  const { data: orcamentos } = await orcamentosQuery;
-
-  return (
-    // O segredo do alinhamento está nestes paddings (px-6 md:px-10) que devem bater com o conteúdo do Header
-    <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
-      <DashboardHeader />
-        
-        {/* Barra de Busca */}
-        <div className="px-8 flex flex-col md:flex-row items-center gap-4 mb-10 w-full">
-          <Link href="/dashboard/orcamentos/novo" className="w-full md:w-auto">
-            <button className="w-full md:w-auto bg-blue-600 text-white font-bold px-6 py-3.5 rounded-xl shadow-lg shadow-blue-900/20 hover:bg-blue-500 transition uppercase text-xs flex items-center justify-center gap-2">
-               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-               Novo Orçamento
-            </button>
-          </Link>
-
-          <form method="GET" className="flex-1 w-full relative">
-            <input
-              type="text"
-              name="q"
-              defaultValue={query}
-              placeholder="Buscar por título ou nome do cliente..."
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
-            />
-            <svg className="w-5 h-5 text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </form>
-        </div>
-
-        {/* Grid de Cards */}
-        <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(orcamentos || []).map((orc) => (
-            <div key={orc.id} className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition flex flex-col gap-4">
-              <div className="flex-1">
-                <div className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1 line-clamp-2">{orc.titulo}</div>
-                <div className="text-zinc-400 text-sm flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-700"></span>
-                  Cliente: <span className="text-zinc-200">{clientesMap.get(orc.cliente_id) || "Desconhecido"}</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center mt-auto pt-4 border-t border-zinc-800/50">
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-                  {orc.created_at ? new Date(orc.created_at).toLocaleDateString('pt-BR') : '-'}
-                </span>
-                <Link href={`/dashboard/orcamentos/${orc.id}`} className="px-4 py-2 rounded-lg bg-zinc-800 text-white text-[10px] font-bold uppercase hover:bg-zinc-700 transition">
-                  Ver Detalhes
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
-    
-    </div>
-  );
-}
-</file>
-
-<file path="app/layout.tsx">
-import type { Metadata } from "next";
-
-
-import "./globals.css";
-import NextTopLoader from "nextjs-toploader";
-
-export const metadata: Metadata = {
-  metadataBase: new URL("https://precifica.nkwflow.com"),
-  title: "Precifica - Simplificando seus orçamentos",
-  description: "Facilite a criação e gestão de orçamentos com nossa ferramenta intuitiva e eficiente.",
-  icons: {
-    icon: "/icon.svg",
-  },
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="pt-BR" className="dark">
-      <body className="font-sans antialiased bg-background text-foreground">
-
-        <NextTopLoader
-          color="#2563eb" // Cor azul-600 (a mesma dos seus botões)
-          initialPosition={0.08}
-          crawlSpeed={200}
-          height={3}
-          crawl={true}
-          showSpinner={false} // Desative o spinner se quiser apenas a barra
-          easing="ease"
-          speed={200}
-          shadow="0 0 10px #2563eb,0 0 5px #2563eb"
-        />
-
-        {children}
-      </body>
-    </html>
-  );
-}
-</file>
-
 <file path="package.json">
 {
   "private": true,
@@ -3337,6 +3342,50 @@ export default function RootLayout({
 }
 </file>
 
+<file path="app/layout.tsx">
+import type { Metadata } from "next";
+
+
+import "./globals.css";
+import NextTopLoader from "nextjs-toploader";
+
+export const metadata: Metadata = {
+  metadataBase: new URL("https://precifica.nkwflow.com"),
+  title: "Precifica - Simplificando seus orçamentos",
+  description: "Facilite a criação e gestão de orçamentos com nossa ferramenta intuitiva e eficiente.",
+  icons: {
+    icon: "/icon.svg",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="pt-BR" className="dark">
+      <body className="font-sans antialiased bg-background text-foreground">
+
+        <NextTopLoader
+          color="#2563eb" // Cor azul-600 (a mesma dos seus botões)
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false} // Desative o spinner se quiser apenas a barra
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #2563eb,0 0 5px #2563eb"
+        />
+
+        {children}
+      </body>
+    </html>
+  );
+}
+</file>
+
 <file path="app/dashboard/orcamentos/[id]/page.tsx">
 export const dynamic = 'force-dynamic';
 
@@ -3347,7 +3396,7 @@ import { GradeOrcamento } from '@/components/orcamento/grade-orcamento';
 import { HistoricoVersoes } from '@/components/orcamento/historico-versoes';
 import { salvarFluxoOrcamento } from "../actions/salvarFluxoOrcamento";
 import { atualizarTituloOrcamento } from "@/app/dashboard/orcamentos/actions/atualizarTitulo";
-import { revalidatePath } from 'next/cache';
+import { BotaoSalvar } from '@/components/ui/botaoSalvar';
 
 export default async function OrcamentoPage({
     params,
@@ -3360,27 +3409,21 @@ export default async function OrcamentoPage({
     const { v: versaoIdSolicitada } = await searchParams;
     const supabase = await createClient();
 
+    const { data: tiposPapel } = await supabase
+        .from('tipos_papel')
+        .select('*')
+        .order('nome');
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect('/autenticacao/entrar');
 
-    // 1. Busca Dados Iniciais
-    const [{ data: tiposPapel }, { data: clientes }] = await Promise.all([
-        supabase.from('tipos_papel').select('*').order('nome'),
-        supabase.from('clientes').select('id, nome').order('nome')
-    ]);
+    const { data: clientes } = await supabase.from('clientes').select('id, nome').order('nome');
 
     let insumosParaGrade = [];
-    type Orcamento = {
-        id: string;
-        titulo: string;
-        cliente_id: string;
-        // Adicione outros campos relevantes conforme a tabela 'orcamentos'
-    };
-    let orcamentoExistente: Orcamento | null = null;
+    let orcamentoExistente: { id: string; titulo: string; cliente_id: string } | null = null;
     let versoes = [];
     let quantidadesIniciais = [1000, 3000, 5000];
 
-    // 2. Lógica de Carregamento (Novo vs Existente)
     if (id === 'novo') {
         const { data: insumosBase } = await supabase.from('insumos_base').select('*').order('categoria');
         insumosParaGrade = insumosBase?.map(i => ({ ...i, id: String(i.id), custo_unitario: 0 })) || [];
@@ -3391,7 +3434,9 @@ export default async function OrcamentoPage({
         orcamentoExistente = orc;
         versoes = vList || [];
 
-        const versaoParaCarregar = versaoIdSolicitada ? versoes.find(v => v.id === versaoIdSolicitada) : versoes[0];
+        const versaoParaCarregar = versaoIdSolicitada
+            ? versoes.find(v => v.id === versaoIdSolicitada)
+            : versoes[0];
 
         if (versaoParaCarregar) {
             const { data: valores } = await supabase
@@ -3415,30 +3460,28 @@ export default async function OrcamentoPage({
         }
     }
 
-    // --- SERVER ACTIONS ---
-    // Importante: Elas usam os dados passados pelo formulário ou argumentos fixos
-
     async function handleSalvarVersao(formData: FormData) {
-        'use server'; // OBRIGATÓRIO AQUI
-        
+        'use server';
+
         const gradeDadosRaw = formData.get('grade_dados') as string;
         if (!gradeDadosRaw) return;
-
         const { markup, valores } = JSON.parse(gradeDadosRaw);
 
-        if (!user) {
-            throw new Error("Usuário não autenticado.");
-        }
-        await salvarFluxoOrcamento({
-            orcamentoId: id === 'novo' ? undefined : id, // CORREÇÃO: Passando o ID se existir
-            clienteId: formData.get('clienteId') as string,
-            titulo: formData.get('titulo_form') as string || orcamentoExistente?.titulo || "Novo Orçamento",
-            markup: markup,
-            valores: valores,
-            userId: user.id
-        });
+        // Agora pegamos o 'titulo' que vem do input conectado via ID de formulário
+        const tituloFinal = formData.get('titulo') as string || "Novo Orçamento";
 
-        revalidatePath(`/dashboard/orcamentos/${id}`);
+        const payload = {
+            titulo: tituloFinal,
+            clienteId: formData.get('clienteId') as string,
+            valores: valores,
+            userId: user!.id,
+            markup: markup,
+            ...(id !== 'novo' ? { orcamentoId: id } : {})
+        };
+
+        await salvarFluxoOrcamento(payload);
+        // Use the Next.js redirect instead of router.push in a server action
+        redirect('/dashboard/orcamentos');
     }
 
     async function handleUpdateTitle(formData: FormData) {
@@ -3453,46 +3496,54 @@ export default async function OrcamentoPage({
         <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
             <DashboardHeader />
 
-            {/* Layout Responsivo */}
-            <div className="sm:hidden text-center py-20 bg-zinc-900/50 rounded-3xl border border-zinc-800 my-8">
-                <h2 className="text-white font-bold text-xl">Use um Computador</h2>
-                <p className="text-zinc-500 text-sm">A grade requer mais espaço horizontal.</p>
+            <div className="sm:hidden flex flex-col items-center justify-center text-center py-20 px-6 bg-zinc-900/50 rounded-3xl border border-zinc-800 my-8">
+                <h2 className="text-white font-bold text-xl mb-2">Tela muito pequena</h2>
+                <p className="text-zinc-500 text-sm leading-relaxed">
+                    A grade de orçamentos requer mais espaço horizontal.
+                </p>
             </div>
 
-            <main className="hidden sm:block">
-                {/* Header com Título */}
+            <main className="hidden sm:block max-w-7xl mx-auto px-6 py-8">
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-zinc-900/20 p-6 rounded-2xl border border-zinc-800/50">
                     <div className="flex-1 w-full group">
-                        <label className="text-[10px] font-bold uppercase text-zinc-500 mb-1 block">Nome do Orçamento</label>
+                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-1 block">
+                            Nome do Orçamento
+                        </label>
                         <form action={handleUpdateTitle} className="flex items-center gap-4">
                             <input
                                 name="titulo"
+                                form="form-principal" // CONECTA este campo ao formulário de salvar abaixo
                                 defaultValue={orcamentoExistente?.titulo}
-                                className="bg-transparent text-3xl font-black text-white border-b-2 border-transparent focus:border-blue-500 outline-none flex-1"
+                                placeholder="Ex: Cartão de Visita Premium..."
+                                className="bg-transparent text-3xl font-black text-white border-b-2 border-transparent focus:border-blue-500 outline-none transition-all py-1 flex-1"
                                 required
                             />
                             {id !== 'novo' && (
-                                <button type="submit" className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-[10px] font-bold uppercase border border-zinc-700">
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase border border-zinc-700 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                >
                                     Atualizar Nome
                                 </button>
                             )}
                         </form>
                     </div>
+
+                    <div className="text-right hidden md:block">
+                        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">ID do Registro</p>
+                        <p className="font-mono text-zinc-500 text-xs">{id === 'novo' ? 'PENDENTE' : id}</p>
+                    </div>
                 </header>
 
                 {versoes.length > 0 && <HistoricoVersoes versoes={versoes} />}
 
-                {/* Formulário Principal */}
-                <form action={handleSalvarVersao}>
-                    {/* Campo para o título caso seja novo */}
-                    <input type="hidden" name="titulo_form" value={orcamentoExistente?.titulo || ""} />
-                    
+                <form action={handleSalvarVersao} id="form-principal">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
                         <section className="bg-zinc-900/30 p-6 rounded-2xl border border-zinc-800/50 flex-1 w-full md:max-w-md">
-                            <label className="text-[10px] font-bold uppercase text-zinc-500 mb-2 block">Cliente Associado</label>
+                            <label className="text-[10px] font-bold uppercase text-zinc-500 mb-2 block tracking-widest">Cliente Associado</label>
                             <select
                                 name="clienteId"
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 outline-none appearance-none cursor-pointer text-sm"
                                 defaultValue={orcamentoExistente?.cliente_id || ""}
                                 required
                             >
@@ -3501,9 +3552,7 @@ export default async function OrcamentoPage({
                             </select>
                         </section>
 
-                        <button type="submit" className="px-8 py-5 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-500 uppercase text-xs">
-                            Salvar Versão
-                        </button>
+                        <BotaoSalvar />
                     </div>
 
                     <GradeOrcamento

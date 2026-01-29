@@ -40,7 +40,6 @@ export default async function DashboardOrcamentosPage({
   const { data: orcamentos } = await orcamentosQuery;
 
   return (
-    // O segredo do alinhamento está nestes paddings (px-6 md:px-10) que devem bater com o conteúdo do Header
     <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
       <DashboardHeader />
         
@@ -70,26 +69,35 @@ export default async function DashboardOrcamentosPage({
         {/* Grid de Cards */}
         <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {(orcamentos || []).map((orc) => (
-            <div key={orc.id} className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition flex flex-col gap-4">
+            /* O Link agora envolve todo o Card */
+            <Link 
+              key={orc.id} 
+              href={`/dashboard/orcamentos/${orc.id}?edit=true`}
+              className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-blue-500/50 hover:bg-zinc-800/60 transition-all flex flex-col gap-4 cursor-pointer"
+            >
               <div className="flex-1">
-                <div className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1 line-clamp-2">{orc.titulo}</div>
+                <div className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1 line-clamp-2">
+                  {orc.titulo}
+                </div>
                 <div className="text-zinc-400 text-sm flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-700"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-700 group-hover:bg-blue-500 transition"></span>
                   Cliente: <span className="text-zinc-200">{clientesMap.get(orc.cliente_id) || "Desconhecido"}</span>
                 </div>
               </div>
+
               <div className="flex justify-between items-center mt-auto pt-4 border-t border-zinc-800/50">
                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                   {orc.created_at ? new Date(orc.created_at).toLocaleDateString('pt-BR') : '-'}
                 </span>
-                <Link href={`/dashboard/orcamentos/${orc.id}`} className="px-4 py-2 rounded-lg bg-zinc-800 text-white text-[10px] font-bold uppercase hover:bg-zinc-700 transition">
-                  Ver Detalhes
-                </Link>
+                
+                {/* O botão agora é visual, já que o Link pai cuida do clique */}
+                <div className="px-4 py-2 rounded-lg bg-zinc-800 text-white text-[10px] font-bold uppercase group-hover:bg-blue-600 transition">
+                  Editar Orçamento
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
-    
     </div>
   );
 }

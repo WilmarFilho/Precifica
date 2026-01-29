@@ -3,16 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/lib/database.types";
+import { redirect } from "next/navigation"; // 1. Importar o redirect
 
 type VersaoInsert = Database['public']['Tables']['orcamento_versoes']['Insert'];
-type ValorInsert = Database['public']['Tables']['orcamento_versao_valores']['Insert'];
 
 interface FluxoOrcamentoPayload {
   orcamentoId?: string;
   clienteId: string;
-  titulo: string; // Usado apenas na criação do primeiro registro
+  titulo: string;
   userId: string;
   markup: number;
+  quantidadesVisiveis: number[];
   valores: Array<{
     insumo_id: string;
     quantidade_referencia: number;
@@ -24,7 +25,7 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
   const supabase = await createClient();
   let orcamentoId = payload.orcamentoId;
 
-  // 1. Criar Orçamento Base (Apenas se for novo)
+  // 1. Criar Orçamento Base
   if (!orcamentoId) {
     const { data: orcamento, error: orcError } = await supabase
       .from("orcamentos")
@@ -49,7 +50,7 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 
   const nextVersao = (versoes?.[0]?.versao_numero || 0) + 1;
 
-  // 3. Criar a Versão (Histórico imutável)
+  // 3. Criar a Versão
   const { data: versao, error: vError } = await supabase
     .from("orcamento_versoes")
     .insert({
@@ -62,15 +63,15 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
   if (vError || !versao) throw new Error("Erro ao criar versão");
 
   if (!payload.valores || !Array.isArray(payload.valores)) {
-     throw new Error("Os valores da grade são obrigatórios e devem ser um array.");
+    throw new Error("Os valores da grade são obrigatórios.");
   }
-    
-  // 4. Inserir os Valores na Grade
-  const valoresInsert: ValorInsert[] = payload.valores.map((v) => ({
+
+  // 4. Salvar Valores
+  const valoresInsert = payload.valores.map((v) => ({
     versao_id: versao.id,
     insumo_id: v.insumo_id,
-    quantidade_referencia: v.quantidade_referencia,
     valor_custo_unitario_base: v.valor_custo_unitario_base,
+    quantidade_referencia: v.quantidade_referencia 
   }));
 
   const { error: valError } = await supabase
@@ -79,6 +80,27 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 
   if (valError) throw new Error(`Erro ao salvar valores: ${valError.message}`);
 
+  console.log(payload);
+
+  // 5. Atualizar as Colunas do Orçamento
+  const quantidadesUnicas = payload.quantidadesVisiveis;
+
+  await supabase.from("orcamento_colunas").delete().eq("orcamento_id", orcamentoId);
+  
+  const { error: colError } = await supabase.from("orcamento_colunas").insert(
+    quantidadesUnicas.map((qtd, index) => ({
+      orcamento_id: orcamentoId,
+      quantidade: qtd,
+      ordem: index
+    }))
+  );
+
+  if (colError) throw new Error(`Erro ao atualizar colunas: ${colError.message}`);
+
+  // 6. Revalidar e Redirecionar
   revalidatePath(`/dashboard/orcamentos/${orcamentoId}`);
-  return { ok: true, orcamentoId };
+  
+  // Redireciona para o orçamento com o ID da versão recém criada no parâmetro 'v'
+  // Note que NÃO passamos 'edit=true' para que ele caia em modo de visualização
+  redirect(`/dashboard/orcamentos/${orcamentoId}?v=${versao.id}`);
 }

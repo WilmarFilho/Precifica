@@ -21,30 +21,38 @@ interface GradeOrcamentoProps {
   quantidadesPadrao: number[];
   markupInicial: number;
   tiposPapel: TipoPapel[];
+  readOnly?: boolean; // NOVO: Propriedade para travar edição
 }
 
-export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInicial, tiposPapel }: GradeOrcamentoProps) {
+export function GradeOrcamento({
+  insumosIniciais,
+  quantidadesPadrao,
+  markupInicial,
+  tiposPapel,
+  readOnly = false // Default falso para manter retrocompatibilidade
+}: GradeOrcamentoProps) {
   const [quantidades, setQuantidades] = useState<number[]>(quantidadesPadrao);
+
   const [markup, setMarkup] = useState<number>(markupInicial);
   const [custos, setCustos] = useState<Record<string, number>>({});
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeInsumoId, setActiveInsumoId] = useState<string | null>(null);
+
   const [calcParams, setCalcParams] = useState({
     papelId: '',
     formato: 'f1' as keyof Omit<TipoPapel, 'id' | 'nome'>,
     quantidadeFolhas: 1
   });
 
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const papeisFiltrados = useMemo(() => {
-    if (searchTerm.length < 4) return [];
-    return tiposPapel.filter(p =>
-      p.nome.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm, tiposPapel]);
+  // Sincroniza quantidades se as quantidadesPadrao mudarem (ao trocar de versão no histórico)
+  useEffect(() => {
+    setQuantidades(quantidadesPadrao);
+  }, [quantidadesPadrao]);
+
+  // Removido papeisFiltrados pois não estava sendo utilizado
 
   useEffect(() => {
     const initCustos: Record<string, number> = {};
@@ -63,43 +71,59 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
     setExpandedCategories(initExpanded);
   }, [insumosIniciais]);
 
-  // Dentro de grade-orcamento.tsx
-  useEffect(() => {
-    const valoresExport: { insumo_id: string; quantidade_referencia: number; valor_custo_unitario_base: number }[] = [];
+  // DENTRO DE grade-orcamento.tsx
 
-    // CORRIGIDO: nome da variável para insumosIniciais
-    insumosIniciais.forEach(insumo => {
-      // Agora percorre TODAS as colunas de quantidades
-      quantidades.forEach(qtd => {
-        valoresExport.push({
+  useEffect(() => {
+    if (readOnly) return;
+
+    // MAPEAMENTO CORRETO: 
+    // Para cada insumo que tem custo, criamos uma entrada para CADA quantidade da grade
+    const valoresExport = insumosIniciais
+      .filter(insumo => (custos[insumo.id] || 0) > 0)
+      .flatMap(insumo =>
+        quantidades.map(qtd => ({
           insumo_id: insumo.id,
-          quantidade_referencia: qtd,
-          valor_custo_unitario_base: custos[insumo.id] || 0
-        });
-      });
-    });
+          quantidade_referencia: qtd, // Agora usa a quantidade real da coluna
+          valor_custo_unitario_base: custos[insumo.id]
+        }))
+      );
+
+      console.log(quantidades)
 
     const hiddenInput = document.getElementById('grade-dados-input') as HTMLInputElement;
     if (hiddenInput) {
       hiddenInput.value = JSON.stringify({
         markup: markup,
-        valores: valoresExport
+        valores: valoresExport,
+        quantidadesVisiveis: quantidades
       });
     }
-  }, [insumosIniciais, quantidades, custos, markup]); // CORRIGIDO: dependências
+  }, [insumosIniciais, custos, markup, quantidades, readOnly]);
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const papeisFiltrados = useMemo(() => {
+    if (searchTerm.length < 4) return [];
+    return tiposPapel.filter(p =>
+      p.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm, tiposPapel]);
 
   const adicionarColuna = () => {
+    if (readOnly) return;
     const ultimaQtd = quantidades[quantidades.length - 1] || 0;
     setQuantidades([...quantidades, ultimaQtd + 100]);
   };
 
   const removerColuna = (index: number) => {
+    if (readOnly) return;
     if (quantidades.length > 1) {
       setQuantidades(quantidades.filter((_, i) => i !== index));
     }
   };
 
   const alterarQuantidade = (index: number, valor: number) => {
+    if (readOnly) return;
     const novas = [...quantidades];
     novas[index] = valor;
     setQuantidades(novas);
@@ -140,7 +164,6 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
       const custoTotalFinal = valorUnitarioFormato * calcParams.quantidadeFolhas;
       setCustos(prev => ({ ...prev, [activeInsumoId]: Number(custoTotalFinal.toFixed(4)) }));
       setIsModalOpen(false);
-      setSearchTerm('');
     }
   };
 
@@ -152,34 +175,30 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
 
   return (
     <div>
-      {/* Campo Oculto para sincronizar com a Server Action */}
-      <input
-        type="hidden"
-        name="grade_dados"
-        id="grade-dados-input"
-      />
+      <input type="hidden" name="grade_dados" id="grade-dados-input" />
 
-      {/* TOOLBAR */}
       <div className="flex justify-between items-center bg-zinc-900/40 p-4 rounded-xl border border-zinc-800">
         <div className="flex items-center gap-4">
           <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Markup (%)</label>
           <input
             type="number"
             value={markup}
+            disabled={readOnly}
             onChange={(e) => setMarkup(Number(e.target.value))}
-            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-1 w-20 text-blue-400 font-bold outline-none focus:border-blue-500 transition"
+            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-1 w-20 text-blue-400 font-bold outline-none focus:border-blue-500 transition disabled:opacity-50"
           />
         </div>
-        <button
-          type="button"
-          onClick={adicionarColuna}
-          className="flex items-center gap-2 bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 px-4 py-2 rounded-lg text-xs font-bold transition uppercase tracking-tighter"
-        >
-          <Plus size={14} /> Adicionar Coluna
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={adicionarColuna}
+            className="flex items-center gap-2 bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 px-4 py-2 rounded-lg text-xs font-bold transition uppercase tracking-tighter"
+          >
+            <Plus size={14} /> Adicionar Coluna
+          </button>
+        )}
       </div>
 
-      {/* TABELA */}
       <div className="mt-8 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/50 shadow-xl">
         <table className="w-full text-left text-sm border-collapse min-w-[800px]">
           <thead className="bg-zinc-900 text-zinc-500 uppercase font-bold">
@@ -192,17 +211,20 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
                     <input
                       type="number"
                       value={q}
+                      disabled={readOnly}
                       onChange={(e) => alterarQuantidade(i, Number(e.target.value))}
-                      className="bg-transparent border-none text-center text-blue-400 font-black text-lg w-full focus:ring-0 focus:outline-none p-0 leading-none"
+                      className="bg-transparent border-none text-center text-blue-400 font-black text-lg w-full focus:ring-0 focus:outline-none p-0 leading-none disabled:cursor-default"
                     />
                     <span className="text-[9px] text-zinc-500 mt-1 tracking-tighter">UNIDADES</span>
-                    <button
-                      type="button"
-                      onClick={() => removerColuna(i)}
-                      className="opacity-0 group-hover:opacity-100 text-red-500/50 hover:text-red-500 transition-all mt-1"
-                    >
-                      <Trash2 size={12} />
-                    </button>
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        onClick={() => removerColuna(i)}
+                        className="opacity-0 group-hover:opacity-100 text-red-500/50 hover:text-red-500 transition-all mt-1"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
                   </div>
                 </th>
               ))}
@@ -221,9 +243,7 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
                     </td>
                   </tr>
                   {isExpanded && items.map(item => {
-                    const isPapel = item.nome.toLowerCase().includes('papel');
-                    const isPapelao = item.categoria.toLowerCase() === 'papelão' || item.nome.toLowerCase().includes('papelão');
-                    const showCalculator = isPapel && !isPapelao;
+                    const isPapel = item.nome.toLowerCase().includes('papel') && !item.nome.toLowerCase().includes('papelão');
                     return (
                       <tr key={item.id} className="hover:bg-zinc-800/10 transition group">
                         <td className="p-4 text-zinc-300 font-medium">{item.nome}</td>
@@ -234,12 +254,13 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
                               <input
                                 type="number"
                                 step="0.0001"
+                                disabled={readOnly}
                                 value={custos[item.id] ?? 0}
                                 onChange={(e) => setCustos({ ...custos, [item.id]: Number(e.target.value) })}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 pl-7 text-right tabular-nums text-zinc-400 focus:text-blue-400 outline-none"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 pl-7 text-right tabular-nums text-zinc-400 focus:text-blue-400 outline-none disabled:opacity-50"
                               />
                             </div>
-                            {showCalculator && (
+                            {isPapel && !readOnly && (
                               <button
                                 type="button"
                                 onClick={() => { setActiveInsumoId(item.id); setIsModalOpen(true); }}
@@ -405,4 +426,4 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
       )}
     </div>
   );
-} 
+}
