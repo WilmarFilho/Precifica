@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, X, ChevronDown, ChevronRight, Plus, Trash2, Search } from 'lucide-react';
+import { Calculator, X, ChevronDown, ChevronRight, Plus, Trash2, Search, Settings2 } from 'lucide-react';
 
 interface Insumo {
   id: string;
@@ -16,11 +16,35 @@ interface TipoPapel {
   f1: number; f2: number; f3: number; f4: number; f6: number; f8: number; f9: number;
 }
 
+interface InsumoWireo {
+  id: string;
+  diametro: string;
+  passo: string;
+  quantidade_caixa: number;
+  preco_caixa_base: number;
+  preco_caixa_especial: number;
+}
+
+interface InsumoEspiral {
+  id: string;
+  tamanho_mm: string;
+  preco_cento: number;
+}
+
+interface InsumoAcessorio {
+  id: string;
+  nome: string;
+  custo_unitario: number;
+}
+
 interface GradeOrcamentoProps {
   insumosIniciais: Insumo[];
   quantidadesPadrao: number[];
   markupInicial: number;
   tiposPapel: TipoPapel[];
+  wireoOptions: InsumoWireo[];
+  espiralOptions: InsumoEspiral[];
+  acessoriosOptions: InsumoAcessorio[];
   readOnly?: boolean; // NOVO: Propriedade para travar edição
 }
 
@@ -29,6 +53,9 @@ export function GradeOrcamento({
   quantidadesPadrao,
   markupInicial,
   tiposPapel,
+  wireoOptions,
+  espiralOptions,
+  acessoriosOptions,
   readOnly = false // Default falso para manter retrocompatibilidade
 }: GradeOrcamentoProps) {
   const [quantidades, setQuantidades] = useState<number[]>(quantidadesPadrao);
@@ -36,6 +63,19 @@ export function GradeOrcamento({
   const [markup, setMarkup] = useState<number>(markupInicial);
   const [custos, setCustos] = useState<Record<string, number>>({});
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  // Estados dos Modais
+  const [modalPapel, setModalPapel] = useState({ isOpen: false, insumoId: '' });
+  const [modalEncadernacao, setModalEncadernacao] = useState({ 
+    isOpen: false, 
+    insumoId: '', 
+    tipo: '' as 'wireo' | 'espiral' 
+  });
+  const [modalAcessorio, setModalAcessorio] = useState({ isOpen: false, insumoId: '', selectedId: '', quantidade: 1 });
+
+  // Estados de Cálculo
+  const [calcPapel, setCalcPapel] = useState({ papelId: '', formato: 'f4' as keyof TipoPapel, qtdFolhas: 1 });
+  const [calcEncadernacao, setCalcEncadernacao] = useState({ selectedId: '', corEspecial: false, quantidade: 1 });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeInsumoId, setActiveInsumoId] = useState<string | null>(null);
@@ -69,7 +109,7 @@ export function GradeOrcamento({
 
     setCustos(initCustos);
     setExpandedCategories(initExpanded);
-  }, [insumosIniciais]);
+  }, [insumosIniciais, wireoOptions, espiralOptions]);
 
   // DENTRO DE grade-orcamento.tsx
 
@@ -87,8 +127,6 @@ export function GradeOrcamento({
           valor_custo_unitario_base: custos[insumo.id]
         }))
       );
-
-      console.log(quantidades)
 
     const hiddenInput = document.getElementById('grade-dados-input') as HTMLInputElement;
     if (hiddenInput) {
@@ -173,6 +211,37 @@ export function GradeOrcamento({
     );
   }, [custos, quantidades, insumosIniciais]);
 
+  // --- LÓGICA DE CÁLCULO ENCADERNAÇÃO ---
+  const aplicarCalculoEncadernacao = () => {
+    let custoUnitario = 0;
+    if (modalEncadernacao.tipo === 'wireo') {
+      const item = wireoOptions.find(w => w.id === calcEncadernacao.selectedId);
+      if (item) {
+        const precoCaixa = calcEncadernacao.corEspecial ? item.preco_caixa_especial : item.preco_caixa_base;
+        custoUnitario = precoCaixa / item.quantidade_caixa;
+      }
+    } else {
+      const item = espiralOptions.find(e => e.id === calcEncadernacao.selectedId);
+      if (item) custoUnitario = item.preco_cento / 100;
+    }
+    const quantidade = calcEncadernacao.quantidade > 0 ? calcEncadernacao.quantidade : 1;
+    const custoTotal = custoUnitario * quantidade;
+    setCustos(prev => ({ ...prev, [modalEncadernacao.insumoId]: Number(custoTotal.toFixed(4)) }));
+    setModalEncadernacao({ isOpen: false, insumoId: '', tipo: '' as any });
+    setCalcEncadernacao({ selectedId: '', corEspecial: false, quantidade: 1 });
+  };
+
+  // Lógica do modal de acessório
+  const aplicarCalculoAcessorio = () => {
+    const acessorio = acessoriosOptions.find(a => a.id === modalAcessorio.selectedId);
+    const quantidade = modalAcessorio.quantidade > 0 ? modalAcessorio.quantidade : 1;
+    if (acessorio && modalAcessorio.insumoId) {
+      const custoTotal = acessorio.custo_unitario * quantidade;
+      setCustos(prev => ({ ...prev, [modalAcessorio.insumoId]: Number(custoTotal.toFixed(4)) }));
+    }
+    setModalAcessorio({ isOpen: false, insumoId: '', selectedId: '', quantidade: 1 });
+  };
+
   return (
     <div>
       <input type="hidden" name="grade_dados" id="grade-dados-input" />
@@ -244,6 +313,10 @@ export function GradeOrcamento({
                   </tr>
                   {isExpanded && items.map(item => {
                     const isPapel = item.nome.toLowerCase().includes('papel') && !item.nome.toLowerCase().includes('papelão');
+                    const isWireo = item.nome.toLowerCase().includes('wire-o');
+                    const isEspiral = item.nome.toLowerCase().includes('espiral');
+                    const isAcessorio = ['acessório 1', 'acessório 2', 'acessório 3'].includes(item.nome.trim().toLowerCase());
+
                     return (
                       <tr key={item.id} className="hover:bg-zinc-800/10 transition group">
                         <td className="p-4 text-zinc-300 font-medium">{item.nome}</td>
@@ -260,15 +333,102 @@ export function GradeOrcamento({
                                 className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 pl-7 text-right tabular-nums text-zinc-400 focus:text-blue-400 outline-none disabled:opacity-50"
                               />
                             </div>
-                            {isPapel && !readOnly && (
+                            {!readOnly && (isPapel || isWireo || isEspiral || isAcessorio) && (
                               <button
                                 type="button"
-                                onClick={() => { setActiveInsumoId(item.id); setIsModalOpen(true); }}
-                                className="p-2 bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 rounded-lg transition"
+                                onClick={() => {
+                                  if (isPapel) {
+                                    setIsModalOpen(true);
+                                    setActiveInsumoId(item.id);
+                                  } else if (isWireo || isEspiral) {
+                                    setModalEncadernacao({ 
+                                      isOpen: true, 
+                                      insumoId: item.id, 
+                                      tipo: isWireo ? 'wireo' : 'espiral' 
+                                    });
+                                  } else if (isAcessorio) {
+                                    setModalAcessorio({ isOpen: true, insumoId: item.id, selectedId: '', quantidade: 1 });
+                                  }
+                                }}
+                                className="p-1.5 bg-blue-600/10 text-blue-400 rounded-md hover:bg-blue-600 hover:text-white transition-all"
                               >
-                                <Calculator size={16} />
+                                <Calculator size={14} />
                               </button>
                             )}
+                                {/* MODAL ACESSÓRIO */}
+                                {modalAcessorio.isOpen && (
+                                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+                                      <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-white font-bold flex items-center gap-2 uppercase tracking-wider text-sm">
+                                          <Settings2 className="text-blue-500" size={18} />
+                                          Calc. Acessório
+                                        </h3>
+                                        <button onClick={() => setModalAcessorio({ ...modalAcessorio, isOpen: false })} className="text-zinc-500 hover:text-white">
+                                          <X size={20} />
+                                        </button>
+                                      </div>
+                                      <div className="space-y-4">
+                                        <div>
+                                          <label className="text-[10px] font-bold text-zinc-500 uppercase mb-1.5 block">Selecione o Acessório</label>
+                                          <select
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-white outline-none"
+                                            value={modalAcessorio.selectedId}
+                                            onChange={e => setModalAcessorio({ ...modalAcessorio, selectedId: e.target.value })}
+                                          >
+                                            <option value="">Selecione...</option>
+                                            {(acessoriosOptions || []).map(a => (
+                                              <option key={a.id} value={a.id}>{a.nome} - R$ {a.custo_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 4 })}</option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-bold text-zinc-500 uppercase mb-1.5 block">Quantidade</label>
+                                          <input
+                                            type="number"
+                                            min={1}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-white outline-none"
+                                            value={modalAcessorio.quantidade}
+                                            onChange={e => setModalAcessorio({ ...modalAcessorio, quantidade: Number(e.target.value) })}
+                                          />
+                                        </div>
+                                        <div className="bg-blue-600/5 border border-blue-500/20 p-4 rounded-xl mt-2 space-y-2">
+                                          <div className="flex justify-between text-[11px] text-zinc-400">
+                                            <span>Valor unitário:</span>
+                                            <span className="text-zinc-300">
+                                              {(() => {
+                                                const acessorio = acessoriosOptions.find(a => a.id === modalAcessorio.selectedId);
+                                                return acessorio ? `R$ ${acessorio.custo_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 4 })}` : 'R$ 0,0000';
+                                              })()}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between text-[11px] text-zinc-400">
+                                            <span>Quantidade:</span>
+                                            <span className="text-zinc-300">{modalAcessorio.quantidade}</span>
+                                          </div>
+                                          <div className="flex justify-between text-sm font-bold text-white border-t border-zinc-800 pt-2">
+                                            <span>Custo Total:</span>
+                                            <span className="text-blue-400">
+                                              {(() => {
+                                                const acessorio = acessoriosOptions.find(a => a.id === modalAcessorio.selectedId);
+                                                const quantidade = modalAcessorio.quantidade > 0 ? modalAcessorio.quantidade : 1;
+                                                return acessorio ? (acessorio.custo_unitario * quantidade).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00';
+                                              })()}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={aplicarCalculoAcessorio}
+                                          disabled={!modalAcessorio.selectedId}
+                                          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all mt-4"
+                                        >
+                                          APLICAR VALOR
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                           </div>
                         </td>
                         {quantidades.map((q, i) => (
@@ -305,6 +465,111 @@ export function GradeOrcamento({
           </tfoot>
         </table>
       </div>
+
+      {/* MODAL ENCADERNAÇÃO (Wire-o / Espiral) */}
+      {modalEncadernacao.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-white font-bold flex items-center gap-2 uppercase tracking-wider text-sm">
+                <Settings2 className="text-blue-500" size={18} />
+                Calc. {modalEncadernacao.tipo === 'wireo' ? 'Wire-o' : 'Espiral'}
+              </h3>
+              <button onClick={() => setModalEncadernacao({ ...modalEncadernacao, isOpen: false })} className="text-zinc-500 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase mb-1.5 block">Selecione o Diâmetro / Tamanho</label>
+                <select 
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-white outline-none"
+                  value={calcEncadernacao.selectedId}
+                  onChange={(e) => setCalcEncadernacao({ ...calcEncadernacao, selectedId: e.target.value })}
+                >
+                  <option value="">Selecione...</option>
+                  {modalEncadernacao.tipo === 'wireo' 
+                    ? (wireoOptions || []).map(w => <option key={w.id} value={w.id}>{w.diametro} ({w.passo}) - {w.quantidade_caixa}un</option>)
+                    : (espiralOptions || []).map(e => <option key={e.id} value={e.id}>{e.tamanho_mm}</option>)
+                  }
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase mb-1.5 block">Quantidade</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-white outline-none"
+                  value={calcEncadernacao.quantidade}
+                  onChange={e => setCalcEncadernacao({ ...calcEncadernacao, quantidade: Number(e.target.value) })}
+                />
+              </div>
+              <div className="bg-blue-600/5 border border-blue-500/20 p-4 rounded-xl mt-2 space-y-2">
+                <div className="flex justify-between text-[11px] text-zinc-400">
+                  <span>Valor unitário:</span>
+                  <span className="text-zinc-300">
+                    {(() => {
+                      let valor = 0;
+                      if (modalEncadernacao.tipo === 'wireo') {
+                        const item = wireoOptions.find(w => w.id === calcEncadernacao.selectedId);
+                        if (item) valor = (calcEncadernacao.corEspecial ? item.preco_caixa_especial : item.preco_caixa_base) / item.quantidade_caixa;
+                      } else {
+                        const item = espiralOptions.find(e => e.id === calcEncadernacao.selectedId);
+                        if (item) valor = item.preco_cento / 100;
+                      }
+                      return `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 4 })}`;
+                    })()}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[11px] text-zinc-400">
+                  <span>Quantidade:</span>
+                  <span className="text-zinc-300">{calcEncadernacao.quantidade}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold text-white border-t border-zinc-800 pt-2">
+                  <span>Custo Total:</span>
+                  <span className="text-blue-400">
+                    {(() => {
+                      let valor = 0;
+                      if (modalEncadernacao.tipo === 'wireo') {
+                        const item = wireoOptions.find(w => w.id === calcEncadernacao.selectedId);
+                        if (item) valor = (calcEncadernacao.corEspecial ? item.preco_caixa_especial : item.preco_caixa_base) / item.quantidade_caixa;
+                      } else {
+                        const item = espiralOptions.find(e => e.id === calcEncadernacao.selectedId);
+                        if (item) valor = item.preco_cento / 100;
+                      }
+                      return (valor * (calcEncadernacao.quantidade > 0 ? calcEncadernacao.quantidade : 1)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    })()}
+                  </span>
+                </div>
+              </div>
+
+              {modalEncadernacao.tipo === 'wireo' && (
+                <div className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-xl border border-zinc-800">
+                  <input 
+                    type="checkbox" 
+                    id="corEspecial" 
+                    className="w-4 h-4 accent-blue-600"
+                    onChange={(e) => setCalcEncadernacao({ ...calcEncadernacao, corEspecial: e.target.checked })}
+                  />
+                  <label htmlFor="corEspecial" className="text-xs text-zinc-300 cursor-pointer">
+                    Utilizar Cor Especial (Prata/Bronze/Cores)
+                  </label>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={aplicarCalculoEncadernacao}
+                disabled={!calcEncadernacao.selectedId}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all mt-4"
+              >
+                APLICAR VALOR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DA CALCULADORA */}
       {isModalOpen && (

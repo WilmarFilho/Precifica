@@ -80,8 +80,6 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 
   if (valError) throw new Error(`Erro ao salvar valores: ${valError.message}`);
 
-  console.log(payload);
-
   // 5. Atualizar as Colunas do Orçamento
   const quantidadesUnicas = payload.quantidadesVisiveis;
 

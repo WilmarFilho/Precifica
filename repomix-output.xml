@@ -309,27 +309,6 @@ export async function listarClientes(busca: string = "") {
 }
 </file>
 
-<file path="app/dashboard/orcamentos/actions/atualizarTitulo.ts">
-"use server";
-
-import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
-
-export async function atualizarTituloOrcamento(id: string, novoTitulo: string) {
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from("orcamentos")
-    .update({ titulo: novoTitulo })
-    .eq("id", id);
-
-  if (error) throw new Error("Erro ao atualizar título");
-
-  revalidatePath(`/dashboard/orcamentos/${id}`);
-  return { ok: true };
-}
-</file>
-
 <file path="app/icon.svg">
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect width="32" height="32" rx="16" fill="#2563EB"/>
@@ -1868,6 +1847,31 @@ export default function PaginaRedefinirSenha() {
 }
 </file>
 
+<file path="app/dashboard/orcamentos/actions/atualizarTitulo.ts">
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+
+// No arquivo atualizarTitulo.ts
+
+export async function atualizarTituloOrcamento(id: string, novoTitulo: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("orcamentos")
+    .update({ titulo: novoTitulo })
+    .eq("id", id);
+
+  if (error) throw new Error("Erro ao atualizar título");
+
+  // Garanta que o caminho está correto (verifique se a pasta é /orcamentos ou /orcamento)
+  revalidatePath(`/dashboard/orcamentos/${id}`);
+  
+  return { ok: true };
+}
+</file>
+
 <file path="app/globals.css">
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 @tailwind base;
@@ -2011,6 +2015,165 @@ EXPOSE 3002
 CMD ["node", "server.js"]
 </file>
 
+<file path="proxy.ts">
+import { updateSession } from "@/lib/supabase/proxy";
+import { type NextRequest } from "next/server";
+
+export async function proxy(request: NextRequest) {
+  return await updateSession(request);
+}
+
+export const config = {
+  matcher: [
+    // Protege apenas rotas /dashboard (e subrotas)
+    "/dashboard/:path*",
+  ],
+};
+</file>
+
+<file path="tailwind.config.ts">
+import type { Config } from "tailwindcss";
+
+export default {
+  darkMode: "class",
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ["Poppins", "sans-serif"],
+      },
+      colors: {
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        chart: {
+          "1": "hsl(var(--chart-1))",
+          "2": "hsl(var(--chart-2))",
+          "3": "hsl(var(--chart-3))",
+          "4": "hsl(var(--chart-4))",
+          "5": "hsl(var(--chart-5))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+} satisfies Config;
+</file>
+
+<file path="components/dashboard-header.tsx">
+'use client';
+
+import { useState } from "react";
+import Link from "next/link";
+import { LogoutButton } from "@/components/buttons/logout-button";
+import { Menu, X } from "lucide-react";
+
+export function DashboardHeader() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const navLinks = [
+    { href: "/dashboard/orcamentos", label: "Orçamentos" },
+    { href: "/dashboard/clientes", label: "Clientes" },
+  ];
+
+  return (
+    // Removido max-w-7xl e mx-auto daqui, pois o pai já controla isso
+    <header className="w-full relative z-50 mb-8">
+      <div 
+        className={`w-full flex items-center justify-between py-4 px-6 md:px-10 transition-all duration-300 ${
+          isMenuOpen ? "rounded-t-3xl border-b-0" : "rounded-full"
+        } border border-white/10 bg-white/5 backdrop-blur-lg shadow-md`}
+        style={{ background: "rgba(255,255,255,0.07)" }}
+      >
+        <Link href="/dashboard/orcamentos" className="font-extrabold text-lg tracking-wide text-white uppercase shrink-0">
+          Precifica
+        </Link>
+
+        <nav className="hidden md:flex gap-8">
+          {navLinks.map((link) => (
+            <Link 
+              key={link.href} 
+              href={link.href} 
+              className="text-white/80 hover:text-white font-medium transition text-sm uppercase tracking-wider"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="hidden md:block">
+          <LogoutButton />
+        </div>
+
+        <button className="md:hidden text-white p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {isMenuOpen && (
+        <div className="md:hidden absolute left-0 right-0 border border-t-0 border-white/10 bg-[#121214] backdrop-blur-xl rounded-b-3xl shadow-xl overflow-hidden">
+          <nav className="flex flex-col p-4 gap-2">
+            {navLinks.map((link) => (
+              <Link 
+                key={link.href} 
+                href={link.href}
+                onClick={() => setIsMenuOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/5 p-4 rounded-xl font-medium transition text-sm uppercase"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="border-t border-white/10 mt-2 pt-4 pb-2 px-4">
+              <LogoutButton />
+            </div>
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+}
+</file>
+
 <file path="lib/database.types.ts">
 export type Json =
   | string
@@ -2072,6 +2235,35 @@ export type Database = {
           unidade_medida?: string | null
         }
         Relationships: []
+      }
+      orcamento_colunas: {
+        Row: {
+          id: string
+          orcamento_id: string | null
+          ordem: number | null
+          quantidade: number
+        }
+        Insert: {
+          id?: string
+          orcamento_id?: string | null
+          ordem?: number | null
+          quantidade: number
+        }
+        Update: {
+          id?: string
+          orcamento_id?: string | null
+          ordem?: number | null
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_colunas_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orcamento_versao_valores: {
         Row: {
@@ -2358,222 +2550,6 @@ export const Constants = {
 } as const
 </file>
 
-<file path="proxy.ts">
-import { updateSession } from "@/lib/supabase/proxy";
-import { type NextRequest } from "next/server";
-
-export async function proxy(request: NextRequest) {
-  return await updateSession(request);
-}
-
-export const config = {
-  matcher: [
-    // Protege apenas rotas /dashboard (e subrotas)
-    "/dashboard/:path*",
-  ],
-};
-</file>
-
-<file path="tailwind.config.ts">
-import type { Config } from "tailwindcss";
-
-export default {
-  darkMode: "class",
-  content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
-  theme: {
-    extend: {
-      fontFamily: {
-        sans: ["Poppins", "sans-serif"],
-      },
-      colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
-        },
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
-    },
-  },
-  plugins: [require("tailwindcss-animate")],
-} satisfies Config;
-</file>
-
-<file path="components/dashboard-header.tsx">
-'use client';
-
-import { useState } from "react";
-import Link from "next/link";
-import { LogoutButton } from "@/components/buttons/logout-button";
-import { Menu, X } from "lucide-react";
-
-export function DashboardHeader() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const navLinks = [
-    { href: "/dashboard/orcamentos", label: "Orçamentos" },
-    { href: "/dashboard/clientes", label: "Clientes" },
-  ];
-
-  return (
-    // Removido max-w-7xl e mx-auto daqui, pois o pai já controla isso
-    <header className="w-full relative z-50 mb-8">
-      <div 
-        className={`w-full flex items-center justify-between py-4 px-6 md:px-10 transition-all duration-300 ${
-          isMenuOpen ? "rounded-t-3xl border-b-0" : "rounded-full"
-        } border border-white/10 bg-white/5 backdrop-blur-lg shadow-md`}
-        style={{ background: "rgba(255,255,255,0.07)" }}
-      >
-        <Link href="/dashboard/orcamentos" className="font-extrabold text-lg tracking-wide text-white uppercase shrink-0">
-          Precifica
-        </Link>
-
-        <nav className="hidden md:flex gap-8">
-          {navLinks.map((link) => (
-            <Link 
-              key={link.href} 
-              href={link.href} 
-              className="text-white/80 hover:text-white font-medium transition text-sm uppercase tracking-wider"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden md:block">
-          <LogoutButton />
-        </div>
-
-        <button className="md:hidden text-white p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {isMenuOpen && (
-        <div className="md:hidden absolute left-0 right-0 border border-t-0 border-white/10 bg-[#121214] backdrop-blur-xl rounded-b-3xl shadow-xl overflow-hidden">
-          <nav className="flex flex-col p-4 gap-2">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.href} 
-                href={link.href}
-                onClick={() => setIsMenuOpen(false)}
-                className="text-white/80 hover:text-white hover:bg-white/5 p-4 rounded-xl font-medium transition text-sm uppercase"
-              >
-                {link.label}
-              </Link>
-            ))}
-            <div className="border-t border-white/10 mt-2 pt-4 pb-2 px-4">
-              <LogoutButton />
-            </div>
-          </nav>
-        </div>
-      )}
-    </header>
-  );
-}
-</file>
-
-<file path="components/orcamento/historico-versoes.tsx">
-'use client';
-
-import { Database } from "@/lib/database.types";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react"; // Adicionado para gerenciar loading
-
-type Versao = Database['public']['Tables']['orcamento_versoes']['Row'];
-
-export function HistoricoVersoes({ versoes }: { versoes: Versao[] }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-
-  const versaoAtivaId = searchParams.get('v') || versoes[0]?.id;
-
-  const handleTrocarVersao = (versaoId: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('v', versaoId);
-
-    // startTransition avisa ao Next.js que uma mudança de estado está ocorrendo
-    // Isso geralmente aciona o NextTopLoader se configurado corretamente
-    startTransition(() => {
-      router.push(`?${params.toString()}`);
-    });
-  };
-
-  return (
-    <div className={`flex flex-wrap gap-2 mb-6 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
-      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest w-full mb-1">
-        Histórico de Versões (Clique para visualizar)
-      </p>
-      {versoes.map((v) => {
-        const isSelected = v.id === versaoAtivaId;
-        return (
-          <button
-            key={v.id}
-            type="button"
-            onClick={() => handleTrocarVersao(v.id)}
-            className={`px-3 py-1.5 rounded-lg border transition flex items-center gap-2 ${isSelected
-                ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20"
-                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600"
-              }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-blue-500"}`}></span>
-            <span className="text-xs font-bold font-mono">v{v.versao_numero}</span>
-            <span className={`text-[9px] ${isSelected ? "text-blue-100" : "text-zinc-600"}`}>
-              {new Date(v.created_at!).toLocaleDateString('pt-BR')}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-</file>
-
 <file path="next.config.ts">
 import type { NextConfig } from "next";
 
@@ -2698,22 +2674,145 @@ export default async function ClientesPage({
 }
 </file>
 
+<file path="components/orcamento/historico-versoes.tsx">
+'use client';
+
+import { Database } from "@/lib/database.types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react"; 
+import { Plus } from "lucide-react";
+
+type Versao = Database['public']['Tables']['orcamento_versoes']['Row'];
+
+export function HistoricoVersoes({ versoes }: { versoes: Versao[] }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
+  const versaoAtivaId = searchParams.get('v') || versoes[0]?.id;
+
+  const handleTrocarVersao = (versaoId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    // 1. Define a versão desejada
+    params.set('v', versaoId);
+    
+    // 2. REMOVE o modo de edição ao trocar de versão
+    params.delete('edit');
+
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+    });
+  };
+
+  return (
+    <div className={`flex flex-wrap gap-2 mb-6 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
+      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest w-full mb-1">
+        Histórico de Versões (Clique para visualizar)
+      </p>
+
+      {/* Botão para Criar Nova Versão (entra em modo edit) */}
+      <button
+        type="button"
+        onClick={() => router.push(`?edit=true`)}
+        className="px-3 py-1.5 rounded-lg border border-dashed border-green-600 text-green-500 hover:bg-green-600/10 transition flex items-center gap-2 text-xs font-bold"
+      >
+        <Plus size={14} />
+        CRIAR NOVA VERSÃO
+      </button>
+
+      {/* Lista de Versões (sai do modo edit) */}
+      {versoes.map((v) => {
+        const isSelected = v.id === versaoAtivaId && !searchParams.get('edit');
+        return (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => handleTrocarVersao(v.id)}
+            className={`px-3 py-1.5 rounded-lg border transition flex items-center gap-2 ${
+              isSelected
+                ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20"
+                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600"
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-blue-500"}`}></span>
+            <span className="text-xs font-bold font-mono">v{v.versao_numero}</span>
+            <span className={`text-[9px] ${isSelected ? "text-blue-100" : "text-zinc-600"}`}>
+              {new Date(v.created_at!).toLocaleDateString('pt-BR')}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+</file>
+
+<file path="package.json">
+{
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@radix-ui/react-checkbox": "^1.3.1",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.14",
+    "@radix-ui/react-label": "^2.1.6",
+    "@radix-ui/react-slot": "^1.2.2",
+    "@supabase/ssr": "latest",
+    "@supabase/supabase-js": "latest",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.29.2",
+    "lucide-react": "^0.511.0",
+    "next": "latest",
+    "next-themes": "^0.4.6",
+    "nextjs-toploader": "^3.9.17",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.71.1",
+    "supabase": "^2.72.8",
+    "tailwind-merge": "^3.3.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.1",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5"
+  }
+}
+</file>
+
 <file path="app/dashboard/orcamentos/actions/salvarFluxoOrcamento.ts">
 "use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/lib/database.types";
+import { redirect } from "next/navigation"; // 1. Importar o redirect
 
 type VersaoInsert = Database['public']['Tables']['orcamento_versoes']['Insert'];
-type ValorInsert = Database['public']['Tables']['orcamento_versao_valores']['Insert'];
 
 interface FluxoOrcamentoPayload {
   orcamentoId?: string;
   clienteId: string;
-  titulo: string; // Usado apenas na criação do primeiro registro
+  titulo: string;
   userId: string;
   markup: number;
+  quantidadesVisiveis: number[];
   valores: Array<{
     insumo_id: string;
     quantidade_referencia: number;
@@ -2725,7 +2824,7 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
   const supabase = await createClient();
   let orcamentoId = payload.orcamentoId;
 
-  // 1. Criar Orçamento Base (Apenas se for novo)
+  // 1. Criar Orçamento Base
   if (!orcamentoId) {
     const { data: orcamento, error: orcError } = await supabase
       .from("orcamentos")
@@ -2750,7 +2849,7 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 
   const nextVersao = (versoes?.[0]?.versao_numero || 0) + 1;
 
-  // 3. Criar a Versão (Histórico imutável)
+  // 3. Criar a Versão
   const { data: versao, error: vError } = await supabase
     .from("orcamento_versoes")
     .insert({
@@ -2763,15 +2862,15 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
   if (vError || !versao) throw new Error("Erro ao criar versão");
 
   if (!payload.valores || !Array.isArray(payload.valores)) {
-     throw new Error("Os valores da grade são obrigatórios e devem ser um array.");
+    throw new Error("Os valores da grade são obrigatórios.");
   }
-    
-  // 4. Inserir os Valores na Grade
-  const valoresInsert: ValorInsert[] = payload.valores.map((v) => ({
+
+  // 4. Salvar Valores
+  const valoresInsert = payload.valores.map((v) => ({
     versao_id: versao.id,
     insumo_id: v.insumo_id,
-    quantidade_referencia: v.quantidade_referencia,
     valor_custo_unitario_base: v.valor_custo_unitario_base,
+    quantidade_referencia: v.quantidade_referencia 
   }));
 
   const { error: valError } = await supabase
@@ -2780,8 +2879,29 @@ export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
 
   if (valError) throw new Error(`Erro ao salvar valores: ${valError.message}`);
 
+  console.log(payload);
+
+  // 5. Atualizar as Colunas do Orçamento
+  const quantidadesUnicas = payload.quantidadesVisiveis;
+
+  await supabase.from("orcamento_colunas").delete().eq("orcamento_id", orcamentoId);
+  
+  const { error: colError } = await supabase.from("orcamento_colunas").insert(
+    quantidadesUnicas.map((qtd, index) => ({
+      orcamento_id: orcamentoId,
+      quantidade: qtd,
+      ordem: index
+    }))
+  );
+
+  if (colError) throw new Error(`Erro ao atualizar colunas: ${colError.message}`);
+
+  // 6. Revalidar e Redirecionar
   revalidatePath(`/dashboard/orcamentos/${orcamentoId}`);
-  return { ok: true, orcamentoId };
+  
+  // Redireciona para o orçamento com o ID da versão recém criada no parâmetro 'v'
+  // Note que NÃO passamos 'edit=true' para que ele caia em modo de visualização
+  redirect(`/dashboard/orcamentos/${orcamentoId}?v=${versao.id}`);
 }
 </file>
 
@@ -2828,7 +2948,6 @@ export default async function DashboardOrcamentosPage({
   const { data: orcamentos } = await orcamentosQuery;
 
   return (
-    // O segredo do alinhamento está nestes paddings (px-6 md:px-10) que devem bater com o conteúdo do Header
     <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
       <DashboardHeader />
         
@@ -2858,27 +2977,80 @@ export default async function DashboardOrcamentosPage({
         {/* Grid de Cards */}
         <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {(orcamentos || []).map((orc) => (
-            <div key={orc.id} className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition flex flex-col gap-4">
+            /* O Link agora envolve todo o Card */
+            <Link 
+              key={orc.id} 
+              href={`/dashboard/orcamentos/${orc.id}?edit=true`}
+              className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-blue-500/50 hover:bg-zinc-800/60 transition-all flex flex-col gap-4 cursor-pointer"
+            >
               <div className="flex-1">
-                <div className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1 line-clamp-2">{orc.titulo}</div>
+                <div className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1 line-clamp-2">
+                  {orc.titulo}
+                </div>
                 <div className="text-zinc-400 text-sm flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-700"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-700 group-hover:bg-blue-500 transition"></span>
                   Cliente: <span className="text-zinc-200">{clientesMap.get(orc.cliente_id) || "Desconhecido"}</span>
                 </div>
               </div>
+
               <div className="flex justify-between items-center mt-auto pt-4 border-t border-zinc-800/50">
                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                   {orc.created_at ? new Date(orc.created_at).toLocaleDateString('pt-BR') : '-'}
                 </span>
-                <Link href={`/dashboard/orcamentos/${orc.id}`} className="px-4 py-2 rounded-lg bg-zinc-800 text-white text-[10px] font-bold uppercase hover:bg-zinc-700 transition">
-                  Ver Detalhes
-                </Link>
+                
+                {/* O botão agora é visual, já que o Link pai cuida do clique */}
+                <div className="px-4 py-2 rounded-lg bg-zinc-800 text-white text-[10px] font-bold uppercase group-hover:bg-blue-600 transition">
+                  Editar Orçamento
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
-    
     </div>
+  );
+}
+</file>
+
+<file path="app/layout.tsx">
+import type { Metadata } from "next";
+
+
+import "./globals.css";
+import NextTopLoader from "nextjs-toploader";
+
+export const metadata: Metadata = {
+  metadataBase: new URL("https://precifica.nkwflow.com"),
+  title: "Precifica - Simplificando seus orçamentos",
+  description: "Facilite a criação e gestão de orçamentos com nossa ferramenta intuitiva e eficiente.",
+  icons: {
+    icon: "/icon.svg",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="pt-BR" className="dark">
+      <body className="font-sans antialiased bg-background text-foreground">
+
+        <NextTopLoader
+          color="#2563eb" // Cor azul-600 (a mesma dos seus botões)
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false} // Desative o spinner se quiser apenas a barra
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #2563eb,0 0 5px #2563eb"
+        />
+
+        {children}
+      </body>
+    </html>
   );
 }
 </file>
@@ -2907,30 +3079,38 @@ interface GradeOrcamentoProps {
   quantidadesPadrao: number[];
   markupInicial: number;
   tiposPapel: TipoPapel[];
+  readOnly?: boolean; // NOVO: Propriedade para travar edição
 }
 
-export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInicial, tiposPapel }: GradeOrcamentoProps) {
+export function GradeOrcamento({
+  insumosIniciais,
+  quantidadesPadrao,
+  markupInicial,
+  tiposPapel,
+  readOnly = false // Default falso para manter retrocompatibilidade
+}: GradeOrcamentoProps) {
   const [quantidades, setQuantidades] = useState<number[]>(quantidadesPadrao);
+
   const [markup, setMarkup] = useState<number>(markupInicial);
   const [custos, setCustos] = useState<Record<string, number>>({});
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeInsumoId, setActiveInsumoId] = useState<string | null>(null);
+
   const [calcParams, setCalcParams] = useState({
     papelId: '',
     formato: 'f1' as keyof Omit<TipoPapel, 'id' | 'nome'>,
     quantidadeFolhas: 1
   });
 
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const papeisFiltrados = useMemo(() => {
-    if (searchTerm.length < 4) return [];
-    return tiposPapel.filter(p =>
-      p.nome.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm, tiposPapel]);
+  // Sincroniza quantidades se as quantidadesPadrao mudarem (ao trocar de versão no histórico)
+  useEffect(() => {
+    setQuantidades(quantidadesPadrao);
+  }, [quantidadesPadrao]);
+
+  // Removido papeisFiltrados pois não estava sendo utilizado
 
   useEffect(() => {
     const initCustos: Record<string, number> = {};
@@ -2949,43 +3129,59 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
     setExpandedCategories(initExpanded);
   }, [insumosIniciais]);
 
-  // Dentro de grade-orcamento.tsx
-  useEffect(() => {
-    const valoresExport: { insumo_id: string; quantidade_referencia: number; valor_custo_unitario_base: number }[] = [];
+  // DENTRO DE grade-orcamento.tsx
 
-    // CORRIGIDO: nome da variável para insumosIniciais
-    insumosIniciais.forEach(insumo => {
-      // Agora percorre TODAS as colunas de quantidades
-      quantidades.forEach(qtd => {
-        valoresExport.push({
+  useEffect(() => {
+    if (readOnly) return;
+
+    // MAPEAMENTO CORRETO: 
+    // Para cada insumo que tem custo, criamos uma entrada para CADA quantidade da grade
+    const valoresExport = insumosIniciais
+      .filter(insumo => (custos[insumo.id] || 0) > 0)
+      .flatMap(insumo =>
+        quantidades.map(qtd => ({
           insumo_id: insumo.id,
-          quantidade_referencia: qtd,
-          valor_custo_unitario_base: custos[insumo.id] || 0
-        });
-      });
-    });
+          quantidade_referencia: qtd, // Agora usa a quantidade real da coluna
+          valor_custo_unitario_base: custos[insumo.id]
+        }))
+      );
+
+      console.log(quantidades)
 
     const hiddenInput = document.getElementById('grade-dados-input') as HTMLInputElement;
     if (hiddenInput) {
       hiddenInput.value = JSON.stringify({
         markup: markup,
-        valores: valoresExport
+        valores: valoresExport,
+        quantidadesVisiveis: quantidades
       });
     }
-  }, [insumosIniciais, quantidades, custos, markup]); // CORRIGIDO: dependências
+  }, [insumosIniciais, custos, markup, quantidades, readOnly]);
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const papeisFiltrados = useMemo(() => {
+    if (searchTerm.length < 4) return [];
+    return tiposPapel.filter(p =>
+      p.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm, tiposPapel]);
 
   const adicionarColuna = () => {
+    if (readOnly) return;
     const ultimaQtd = quantidades[quantidades.length - 1] || 0;
     setQuantidades([...quantidades, ultimaQtd + 100]);
   };
 
   const removerColuna = (index: number) => {
+    if (readOnly) return;
     if (quantidades.length > 1) {
       setQuantidades(quantidades.filter((_, i) => i !== index));
     }
   };
 
   const alterarQuantidade = (index: number, valor: number) => {
+    if (readOnly) return;
     const novas = [...quantidades];
     novas[index] = valor;
     setQuantidades(novas);
@@ -3026,7 +3222,6 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
       const custoTotalFinal = valorUnitarioFormato * calcParams.quantidadeFolhas;
       setCustos(prev => ({ ...prev, [activeInsumoId]: Number(custoTotalFinal.toFixed(4)) }));
       setIsModalOpen(false);
-      setSearchTerm('');
     }
   };
 
@@ -3038,34 +3233,30 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
 
   return (
     <div>
-      {/* Campo Oculto para sincronizar com a Server Action */}
-      <input
-        type="hidden"
-        name="grade_dados"
-        id="grade-dados-input"
-      />
+      <input type="hidden" name="grade_dados" id="grade-dados-input" />
 
-      {/* TOOLBAR */}
       <div className="flex justify-between items-center bg-zinc-900/40 p-4 rounded-xl border border-zinc-800">
         <div className="flex items-center gap-4">
           <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Markup (%)</label>
           <input
             type="number"
             value={markup}
+            disabled={readOnly}
             onChange={(e) => setMarkup(Number(e.target.value))}
-            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-1 w-20 text-blue-400 font-bold outline-none focus:border-blue-500 transition"
+            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-1 w-20 text-blue-400 font-bold outline-none focus:border-blue-500 transition disabled:opacity-50"
           />
         </div>
-        <button
-          type="button"
-          onClick={adicionarColuna}
-          className="flex items-center gap-2 bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 px-4 py-2 rounded-lg text-xs font-bold transition uppercase tracking-tighter"
-        >
-          <Plus size={14} /> Adicionar Coluna
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={adicionarColuna}
+            className="flex items-center gap-2 bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 px-4 py-2 rounded-lg text-xs font-bold transition uppercase tracking-tighter"
+          >
+            <Plus size={14} /> Adicionar Coluna
+          </button>
+        )}
       </div>
 
-      {/* TABELA */}
       <div className="mt-8 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/50 shadow-xl">
         <table className="w-full text-left text-sm border-collapse min-w-[800px]">
           <thead className="bg-zinc-900 text-zinc-500 uppercase font-bold">
@@ -3078,17 +3269,20 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
                     <input
                       type="number"
                       value={q}
+                      disabled={readOnly}
                       onChange={(e) => alterarQuantidade(i, Number(e.target.value))}
-                      className="bg-transparent border-none text-center text-blue-400 font-black text-lg w-full focus:ring-0 focus:outline-none p-0 leading-none"
+                      className="bg-transparent border-none text-center text-blue-400 font-black text-lg w-full focus:ring-0 focus:outline-none p-0 leading-none disabled:cursor-default"
                     />
                     <span className="text-[9px] text-zinc-500 mt-1 tracking-tighter">UNIDADES</span>
-                    <button
-                      type="button"
-                      onClick={() => removerColuna(i)}
-                      className="opacity-0 group-hover:opacity-100 text-red-500/50 hover:text-red-500 transition-all mt-1"
-                    >
-                      <Trash2 size={12} />
-                    </button>
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        onClick={() => removerColuna(i)}
+                        className="opacity-0 group-hover:opacity-100 text-red-500/50 hover:text-red-500 transition-all mt-1"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
                   </div>
                 </th>
               ))}
@@ -3107,9 +3301,7 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
                     </td>
                   </tr>
                   {isExpanded && items.map(item => {
-                    const isPapel = item.nome.toLowerCase().includes('papel');
-                    const isPapelao = item.categoria.toLowerCase() === 'papelão' || item.nome.toLowerCase().includes('papelão');
-                    const showCalculator = isPapel && !isPapelao;
+                    const isPapel = item.nome.toLowerCase().includes('papel') && !item.nome.toLowerCase().includes('papelão');
                     return (
                       <tr key={item.id} className="hover:bg-zinc-800/10 transition group">
                         <td className="p-4 text-zinc-300 font-medium">{item.nome}</td>
@@ -3120,12 +3312,13 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
                               <input
                                 type="number"
                                 step="0.0001"
+                                disabled={readOnly}
                                 value={custos[item.id] ?? 0}
                                 onChange={(e) => setCustos({ ...custos, [item.id]: Number(e.target.value) })}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 pl-7 text-right tabular-nums text-zinc-400 focus:text-blue-400 outline-none"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 pl-7 text-right tabular-nums text-zinc-400 focus:text-blue-400 outline-none disabled:opacity-50"
                               />
                             </div>
-                            {showCalculator && (
+                            {isPapel && !readOnly && (
                               <button
                                 type="button"
                                 onClick={() => { setActiveInsumoId(item.id); setIsModalOpen(true); }}
@@ -3294,95 +3487,17 @@ export function GradeOrcamento({ insumosIniciais, quantidadesPadrao, markupInici
 }
 </file>
 
-<file path="package.json">
-{
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint ."
-  },
-  "dependencies": {
-    "@hookform/resolvers": "^5.2.2",
-    "@radix-ui/react-checkbox": "^1.3.1",
-    "@radix-ui/react-dialog": "^1.1.15",
-    "@radix-ui/react-dropdown-menu": "^2.1.14",
-    "@radix-ui/react-label": "^2.1.6",
-    "@radix-ui/react-slot": "^1.2.2",
-    "@supabase/ssr": "latest",
-    "@supabase/supabase-js": "latest",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "framer-motion": "^12.29.2",
-    "lucide-react": "^0.511.0",
-    "next": "latest",
-    "next-themes": "^0.4.6",
-    "nextjs-toploader": "^3.9.17",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-hook-form": "^7.71.1",
-    "supabase": "^2.72.8",
-    "tailwind-merge": "^3.3.0",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^9",
-    "eslint-config-next": "15.3.1",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5"
+<file path="app/page.tsx">
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function Home() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (data?.claims) {
+    redirect("/dashboard/orcamentos");
   }
-}
-</file>
-
-<file path="app/layout.tsx">
-import type { Metadata } from "next";
-
-
-import "./globals.css";
-import NextTopLoader from "nextjs-toploader";
-
-export const metadata: Metadata = {
-  metadataBase: new URL("https://precifica.nkwflow.com"),
-  title: "Precifica - Simplificando seus orçamentos",
-  description: "Facilite a criação e gestão de orçamentos com nossa ferramenta intuitiva e eficiente.",
-  icons: {
-    icon: "/icon.svg",
-  },
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="pt-BR" className="dark">
-      <body className="font-sans antialiased bg-background text-foreground">
-
-        <NextTopLoader
-          color="#2563eb" // Cor azul-600 (a mesma dos seus botões)
-          initialPosition={0.08}
-          crawlSpeed={200}
-          height={3}
-          crawl={true}
-          showSpinner={false} // Desative o spinner se quiser apenas a barra
-          easing="ease"
-          speed={200}
-          shadow="0 0 10px #2563eb,0 0 5px #2563eb"
-        />
-
-        {children}
-      </body>
-    </html>
-  );
+  redirect("/autenticacao/entrar");
 }
 </file>
 
@@ -3403,11 +3518,13 @@ export default async function OrcamentoPage({
     searchParams
 }: {
     params: { id: string },
-    searchParams: { v?: string }
+    searchParams: { v?: string, edit?: string }
 }) {
     const { id } = await params;
-    const { v: versaoIdSolicitada } = await searchParams;
+    const { v: versaoIdSolicitada, edit } = await searchParams;
     const supabase = await createClient();
+
+    const isVisualizandoHistorico = !!versaoIdSolicitada && edit !== 'true';
 
     const { data: tiposPapel } = await supabase
         .from('tipos_papel')
@@ -3422,66 +3539,89 @@ export default async function OrcamentoPage({
     let insumosParaGrade = [];
     let orcamentoExistente: { id: string; titulo: string; cliente_id: string } | null = null;
     let versoes = [];
-    let quantidadesIniciais = [1000, 3000, 5000];
+    let quantidadesIniciais = [100]; // Padrão para novo orçamento é apenas 100
+
+    // 1. Carrega SEMPRE todos os insumos base primeiro
+    const { data: todosInsumosBase } = await supabase
+        .from('insumos_base')
+        .select('*')
+        .order('categoria');
 
     if (id === 'novo') {
-        const { data: insumosBase } = await supabase.from('insumos_base').select('*').order('categoria');
-        insumosParaGrade = insumosBase?.map(i => ({ ...i, id: String(i.id), custo_unitario: 0 })) || [];
+        // Para novo orçamento: todos os insumos com custo 0
+        insumosParaGrade = todosInsumosBase?.map(i => ({
+            ...i,
+            id: String(i.id),
+            custo_unitario: 0
+        })) || [];
     } else {
+
+        // BUSCAR COLUNAS SALVAS
+        const { data: colunasSalvas } = await supabase
+            .from('orcamento_colunas')
+            .select('quantidade')
+            .eq('orcamento_id', id)
+            .order('ordem', { ascending: true });
+
+        // Se houver colunas no banco, usa elas, senão usa [100]
+        quantidadesIniciais = colunasSalvas && colunasSalvas.length > 0
+            ? colunasSalvas.map(c => c.quantidade)
+            : [100];
+
         const { data: orc } = await supabase.from('orcamentos').select('*').eq('id', id).single();
         const { data: vList } = await supabase.from('orcamento_versoes').select('*').eq('orcamento_id', id).order('versao_numero', { ascending: false });
 
         orcamentoExistente = orc;
         versoes = vList || [];
 
+        // Se tiver v na URL, usa ela. Se não (ou se for ?edit=true vindo do dashboard), entre na tela de criar nova versão
         const versaoParaCarregar = versaoIdSolicitada
             ? versoes.find(v => v.id === versaoIdSolicitada)
-            : versoes[0];
+            : null;
 
         if (versaoParaCarregar) {
-            const { data: valores } = await supabase
+            const { data: valoresSalvos } = await supabase
                 .from('orcamento_versao_valores')
-                .select('*, insumos_base(nome, categoria)')
+                .select('*')
                 .eq('versao_id', versaoParaCarregar.id);
 
-            if (valores && valores.length > 0) {
-                quantidadesIniciais = [...new Set(valores.map(val => val.quantidade_referencia))].sort((a, b) => a - b);
-                const uniqueIds = [...new Set(valores.map(val => val.insumo_id))];
-                insumosParaGrade = uniqueIds.map(insId => {
-                    const item = valores.find(val => val.insumo_id === insId);
-                    return {
-                        id: String(insId),
-                        nome: item.insumos_base.nome,
-                        categoria: item.insumos_base.categoria || 'Geral',
-                        custo_unitario: item.valor_custo_unitario_base
-                    };
-                });
-            }
+
+            // Mapeia TODOS os insumos base, injetando o valor salvo onde houver
+            insumosParaGrade = (todosInsumosBase || []).map(base => {
+                const valorSalvo = valoresSalvos?.find(v => v.insumo_id === base.id);
+                return {
+                    id: String(base.id),
+                    nome: base.nome,
+                    categoria: base.categoria || 'Geral',
+                    // Se achou valor no banco, usa ele. Se não, custo 0 para o novo rascunho.
+                    custo_unitario: valorSalvo ? valorSalvo.valor_custo_unitario_base : 0
+                };
+            });
+        } else {
+            // Fallback caso o orçamento exista mas não tenha versões (segurança)
+            insumosParaGrade = todosInsumosBase?.map(i => ({ ...i, id: String(i.id), custo_unitario: 0 })) || [];
         }
     }
 
     async function handleSalvarVersao(formData: FormData) {
         'use server';
-
         const gradeDadosRaw = formData.get('grade_dados') as string;
         if (!gradeDadosRaw) return;
-        const { markup, valores } = JSON.parse(gradeDadosRaw);
-
-        // Agora pegamos o 'titulo' que vem do input conectado via ID de formulário
+        const { markup, valores, quantidadesVisiveis } = JSON.parse(gradeDadosRaw);
         const tituloFinal = formData.get('titulo') as string || "Novo Orçamento";
 
         const payload = {
             titulo: tituloFinal,
             clienteId: formData.get('clienteId') as string,
             valores: valores,
+            quantidadesVisiveis: quantidadesVisiveis,
             userId: user!.id,
             markup: markup,
-            ...(id !== 'novo' ? { orcamentoId: id } : {})
+            ...(id !== 'novo' ? { orcamentoId: id } : {}),
         };
 
         await salvarFluxoOrcamento(payload);
-        // Use the Next.js redirect instead of router.push in a server action
-        redirect('/dashboard/orcamentos');
+        redirect(`/dashboard/orcamentos/${id !== 'novo' ? id : ''}`);
     }
 
     async function handleUpdateTitle(formData: FormData) {
@@ -3496,13 +3636,6 @@ export default async function OrcamentoPage({
         <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
             <DashboardHeader />
 
-            <div className="sm:hidden flex flex-col items-center justify-center text-center py-20 px-6 bg-zinc-900/50 rounded-3xl border border-zinc-800 my-8">
-                <h2 className="text-white font-bold text-xl mb-2">Tela muito pequena</h2>
-                <p className="text-zinc-500 text-sm leading-relaxed">
-                    A grade de orçamentos requer mais espaço horizontal.
-                </p>
-            </div>
-
             <main className="hidden sm:block max-w-7xl mx-auto px-6 py-8">
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-zinc-900/20 p-6 rounded-2xl border border-zinc-800/50">
                     <div className="flex-1 w-full group">
@@ -3512,30 +3645,31 @@ export default async function OrcamentoPage({
                         <form action={handleUpdateTitle} className="flex items-center gap-4">
                             <input
                                 name="titulo"
-                                form="form-principal" // CONECTA este campo ao formulário de salvar abaixo
+                                // REMOVA A LINHA ABAIXO:
+                                // form="form-principal" 
                                 defaultValue={orcamentoExistente?.titulo}
                                 placeholder="Ex: Cartão de Visita Premium..."
                                 className="bg-transparent text-3xl font-black text-white border-b-2 border-transparent focus:border-blue-500 outline-none transition-all py-1 flex-1"
                                 required
+                                disabled={isVisualizandoHistorico}
                             />
-                            {id !== 'novo' && (
+                            {id !== 'novo' && !isVisualizandoHistorico && (
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase border border-zinc-700 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase border border-zinc-700 transition"
                                 >
                                     Atualizar Nome
                                 </button>
                             )}
                         </form>
                     </div>
-
-                    <div className="text-right hidden md:block">
-                        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">ID do Registro</p>
-                        <p className="font-mono text-zinc-500 text-xs">{id === 'novo' ? 'PENDENTE' : id}</p>
-                    </div>
                 </header>
 
-                {versoes.length > 0 && <HistoricoVersoes versoes={versoes} />}
+                {versoes.length > 0 && (
+                    <HistoricoVersoes
+                        versoes={versoes}
+                    />
+                )}
 
                 <form action={handleSalvarVersao} id="form-principal">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
@@ -3543,16 +3677,18 @@ export default async function OrcamentoPage({
                             <label className="text-[10px] font-bold uppercase text-zinc-500 mb-2 block tracking-widest">Cliente Associado</label>
                             <select
                                 name="clienteId"
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 outline-none appearance-none cursor-pointer text-sm"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 outline-none appearance-none cursor-pointer text-sm disabled:opacity-50"
                                 defaultValue={orcamentoExistente?.cliente_id || ""}
                                 required
+                                disabled={isVisualizandoHistorico}
                             >
                                 <option value="" disabled>Selecione um cliente...</option>
                                 {clientes?.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                             </select>
                         </section>
 
-                        <BotaoSalvar />
+                        {/* Só exibe o botão salvar se não estiver visualizando histórico antigo */}
+                        {!isVisualizandoHistorico && <BotaoSalvar />}
                     </div>
 
                     <GradeOrcamento
@@ -3560,25 +3696,12 @@ export default async function OrcamentoPage({
                         insumosIniciais={insumosParaGrade}
                         quantidadesPadrao={quantidadesIniciais}
                         markupInicial={30}
+                        readOnly={isVisualizandoHistorico} // Passa o estado de leitura
                     />
                 </form>
             </main>
         </div>
     );
-}
-</file>
-
-<file path="app/page.tsx">
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-
-export default async function Home() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  if (data?.claims) {
-    redirect("/dashboard/orcamentos");
-  }
-  redirect("/autenticacao/entrar");
 }
 </file>
 

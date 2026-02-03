@@ -22,10 +22,17 @@ export default async function OrcamentoPage({
 
     const isVisualizandoHistorico = !!versaoIdSolicitada && edit !== 'true';
 
-    const { data: tiposPapel } = await supabase
-        .from('tipos_papel')
-        .select('*')
-        .order('nome');
+    const [
+        { data: tiposPapel },
+        { data: wireo },
+        { data: espiral },
+        { data: acessorios }
+    ] = await Promise.all([
+        supabase.from('tipos_papel').select('*').order('nome'),
+        supabase.from('insumos_wireo').select('*').order('preco_caixa_base'),
+        supabase.from('insumos_espiral').select('*').order('tamanho_mm'),
+        supabase.from('insumos_acessorios').select('*').order('nome')
+    ]);
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect('/autenticacao/entrar');
@@ -188,6 +195,9 @@ export default async function OrcamentoPage({
                     </div>
 
                     <GradeOrcamento
+                        wireoOptions={wireo || []}
+                        espiralOptions={espiral || []}
+                        acessoriosOptions={acessorios || []}
                         tiposPapel={tiposPapel || []}
                         insumosIniciais={insumosParaGrade}
                         quantidadesPadrao={quantidadesIniciais}
