@@ -139,6 +139,24 @@ export default async function OrcamentoPage({
         <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
             <DashboardHeader />
 
+            {/* AVISO PARA TELAS PEQUENAS (MOBILE) */}
+            {/* Visível apenas abaixo de 640px (sm) */}
+            <div className="sm:hidden flex flex-col items-center justify-center text-center py-20 px-6">
+                <div className="bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800">
+                    <div className="bg-blue-500/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">Tela muito pequena</h2>
+                    <p className="text-zinc-400 text-sm leading-relaxed">
+                        A ferramenta de orçamentos utiliza uma grade complexa de cálculos que requer mais espaço horizontal. 
+                        <br /><br />
+                        Por favor, <strong>acesse através de um computador</strong> ou tablet em modo paisagem.
+                    </p>
+                </div>
+            </div>
+
             <main className="hidden sm:block max-w-7xl mx-auto px-6 py-8">
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-zinc-900/20 p-6 rounded-2xl border border-zinc-800/50">
                     <div className="flex-1 w-full group">

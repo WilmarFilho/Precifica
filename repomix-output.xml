@@ -2174,6 +2174,204 @@ export function DashboardHeader() {
 }
 </file>
 
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+    output: 'standalone',
+};
+
+export default nextConfig;
+</file>
+
+<file path="app/dashboard/clientes/page.tsx">
+export const dynamic = "force-dynamic";
+
+import { DashboardHeader } from "@/components/dashboard-header";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { NovoClienteModal } from "@/components/modal/novo-cliente-modal";
+
+export default async function ClientesPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
+  const supabase = await createClient();
+
+  // 1. Verificação de Autenticação
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/autenticacao/entrar');
+
+  // 2. Termo de Busca
+  const query = (await searchParams).q || "";
+
+  // 3. Busca no Supabase
+  let dbQuery = supabase
+    .from('clientes')
+    .select('id, nome, created_at')
+    .eq('user_id', user.id)
+    .order('nome', { ascending: true });
+
+  if (query) {
+    dbQuery = dbQuery.ilike('nome', `%${query}%`);
+  }
+
+  const { data: clientes } = await dbQuery;
+
+  return (
+    // CONTÊINER PAI: px-4 md:px-8 para alinhar perfeitamente com a borda externa do Header
+    <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
+      <DashboardHeader />
+        
+      {/* SUB-CONTÊINER: px-2 para alinhar o conteúdo interno com o texto interno do Header */}
+      <div className="px-2">
+        
+        {/* BARRA DE AÇÕES E BUSCA */}
+        <div className="px-8  flex flex-col md:flex-row items-center gap-4 mb-10 w-full mt-10">
+          
+          {/* BOTÃO QUE ABRE O MODAL (Substituindo o Link antigo) */}
+          <NovoClienteModal />
+
+          <form method="GET" className="flex-1 w-full relative">
+            <input
+              type="text"
+              name="q"
+              defaultValue={query}
+              placeholder="Buscar clientes pelo nome..."
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition placeholder:text-zinc-600"
+            />
+            <svg className="w-5 h-5 text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </form>
+        </div>
+
+        {/* GRID DE CLIENTES */}
+        <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {clientes && clientes.length > 0 ? (
+            clientes.map((cliente) => (
+              <div 
+                key={cliente.id} 
+                className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition flex flex-col gap-4 min-h-[160px]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="w-12 h-12 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-500 group-hover:bg-blue-600/20 transition">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-tighter">
+                    ID: {cliente.id.toString().slice(0, 8)}...
+                  </span>
+                </div>
+
+                <div className="flex-1">
+                  <h3 className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1">
+                    {cliente.nome}
+                  </h3>
+                  <p className="text-zinc-500 text-xs">
+                    Cliente desde: {new Date(cliente.created_at).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-zinc-800/50 flex justify-end">
+                  
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-24 border-2 border-dashed border-zinc-800 rounded-3xl">
+              <p className="text-zinc-500 font-medium">Nenhum cliente encontrado.</p>
+              {query && (
+                <Link href="/dashboard/clientes" className="text-blue-500 text-[10px] uppercase font-bold mt-2 inline-block hover:underline tracking-widest">
+                  Limpar busca
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="components/orcamento/historico-versoes.tsx">
+'use client';
+
+import { Database } from "@/lib/database.types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react"; 
+import { Plus } from "lucide-react";
+
+type Versao = Database['public']['Tables']['orcamento_versoes']['Row'];
+
+export function HistoricoVersoes({ versoes }: { versoes: Versao[] }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
+  const versaoAtivaId = searchParams.get('v') || versoes[0]?.id;
+
+  const handleTrocarVersao = (versaoId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    // 1. Define a versão desejada
+    params.set('v', versaoId);
+    
+    // 2. REMOVE o modo de edição ao trocar de versão
+    params.delete('edit');
+
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+    });
+  };
+
+  return (
+    <div className={`flex flex-wrap gap-2 mb-6 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
+      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest w-full mb-1">
+        Histórico de Versões (Clique para visualizar)
+      </p>
+
+      {/* Botão para Criar Nova Versão (entra em modo edit) */}
+      <button
+        type="button"
+        onClick={() => router.push(`?edit=true`)}
+        className="px-3 py-1.5 rounded-lg border border-dashed border-green-600 text-green-500 hover:bg-green-600/10 transition flex items-center gap-2 text-xs font-bold"
+      >
+        <Plus size={14} />
+        CRIAR NOVA VERSÃO
+      </button>
+
+      {/* Lista de Versões (sai do modo edit) */}
+      {versoes.map((v) => {
+        const isSelected = v.id === versaoAtivaId && !searchParams.get('edit');
+        return (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => handleTrocarVersao(v.id)}
+            className={`px-3 py-1.5 rounded-lg border transition flex items-center gap-2 ${
+              isSelected
+                ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20"
+                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600"
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-blue-500"}`}></span>
+            <span className="text-xs font-bold font-mono">v{v.versao_numero}</span>
+            <span className={`text-[9px] ${isSelected ? "text-blue-100" : "text-zinc-600"}`}>
+              {new Date(v.created_at!).toLocaleDateString('pt-BR')}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+</file>
+
 <file path="lib/database.types.ts">
 export type Json =
   | string
@@ -2212,6 +2410,27 @@ export type Database = {
         }
         Relationships: []
       }
+      insumos_acessorios: {
+        Row: {
+          created_at: string | null
+          custo_unitario: number
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string | null
+          custo_unitario: number
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string | null
+          custo_unitario?: number
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       insumos_base: {
         Row: {
           categoria: string | null
@@ -2233,6 +2452,63 @@ export type Database = {
           id?: string
           nome?: string
           unidade_medida?: string | null
+        }
+        Relationships: []
+      }
+      insumos_espiral: {
+        Row: {
+          capacidade_folhas: string | null
+          created_at: string | null
+          id: string
+          preco_cento: number
+          tamanho_mm: string
+        }
+        Insert: {
+          capacidade_folhas?: string | null
+          created_at?: string | null
+          id?: string
+          preco_cento: number
+          tamanho_mm: string
+        }
+        Update: {
+          capacidade_folhas?: string | null
+          created_at?: string | null
+          id?: string
+          preco_cento?: number
+          tamanho_mm?: string
+        }
+        Relationships: []
+      }
+      insumos_wireo: {
+        Row: {
+          capacidade_folhas: string | null
+          created_at: string | null
+          diametro: string
+          id: string
+          passo: string
+          preco_caixa_base: number
+          preco_caixa_especial: number
+          quantidade_caixa: number
+        }
+        Insert: {
+          capacidade_folhas?: string | null
+          created_at?: string | null
+          diametro: string
+          id?: string
+          passo: string
+          preco_caixa_base: number
+          preco_caixa_especial: number
+          quantidade_caixa: number
+        }
+        Update: {
+          capacidade_folhas?: string | null
+          created_at?: string | null
+          diametro?: string
+          id?: string
+          passo?: string
+          preco_caixa_base?: number
+          preco_caixa_especial?: number
+          quantidade_caixa?: number
         }
         Relationships: []
       }
@@ -2550,204 +2826,6 @@ export const Constants = {
 } as const
 </file>
 
-<file path="next.config.ts">
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-    output: 'standalone',
-};
-
-export default nextConfig;
-</file>
-
-<file path="app/dashboard/clientes/page.tsx">
-export const dynamic = "force-dynamic";
-
-import { DashboardHeader } from "@/components/dashboard-header";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { NovoClienteModal } from "@/components/modal/novo-cliente-modal";
-
-export default async function ClientesPage({
-  searchParams,
-}: {
-  searchParams: { q?: string };
-}) {
-  const supabase = await createClient();
-
-  // 1. Verificação de Autenticação
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/autenticacao/entrar');
-
-  // 2. Termo de Busca
-  const query = (await searchParams).q || "";
-
-  // 3. Busca no Supabase
-  let dbQuery = supabase
-    .from('clientes')
-    .select('id, nome, created_at')
-    .eq('user_id', user.id)
-    .order('nome', { ascending: true });
-
-  if (query) {
-    dbQuery = dbQuery.ilike('nome', `%${query}%`);
-  }
-
-  const { data: clientes } = await dbQuery;
-
-  return (
-    // CONTÊINER PAI: px-4 md:px-8 para alinhar perfeitamente com a borda externa do Header
-    <div className="max-w-7xl mx-auto py-8 px-4 md:px-8">
-      <DashboardHeader />
-        
-      {/* SUB-CONTÊINER: px-2 para alinhar o conteúdo interno com o texto interno do Header */}
-      <div className="px-2">
-        
-        {/* BARRA DE AÇÕES E BUSCA */}
-        <div className="px-8  flex flex-col md:flex-row items-center gap-4 mb-10 w-full mt-10">
-          
-          {/* BOTÃO QUE ABRE O MODAL (Substituindo o Link antigo) */}
-          <NovoClienteModal />
-
-          <form method="GET" className="flex-1 w-full relative">
-            <input
-              type="text"
-              name="q"
-              defaultValue={query}
-              placeholder="Buscar clientes pelo nome..."
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition placeholder:text-zinc-600"
-            />
-            <svg className="w-5 h-5 text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </form>
-        </div>
-
-        {/* GRID DE CLIENTES */}
-        <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {clientes && clientes.length > 0 ? (
-            clientes.map((cliente) => (
-              <div 
-                key={cliente.id} 
-                className="group bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition flex flex-col gap-4 min-h-[160px]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-500 group-hover:bg-blue-600/20 transition">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-tighter">
-                    ID: {cliente.id.toString().slice(0, 8)}...
-                  </span>
-                </div>
-
-                <div className="flex-1">
-                  <h3 className="font-black text-xl text-white group-hover:text-blue-400 transition mb-1">
-                    {cliente.nome}
-                  </h3>
-                  <p className="text-zinc-500 text-xs">
-                    Cliente desde: {new Date(cliente.created_at).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-
-                <div className="mt-auto pt-4 border-t border-zinc-800/50 flex justify-end">
-                  
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-24 border-2 border-dashed border-zinc-800 rounded-3xl">
-              <p className="text-zinc-500 font-medium">Nenhum cliente encontrado.</p>
-              {query && (
-                <Link href="/dashboard/clientes" className="text-blue-500 text-[10px] uppercase font-bold mt-2 inline-block hover:underline tracking-widest">
-                  Limpar busca
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="components/orcamento/historico-versoes.tsx">
-'use client';
-
-import { Database } from "@/lib/database.types";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react"; 
-import { Plus } from "lucide-react";
-
-type Versao = Database['public']['Tables']['orcamento_versoes']['Row'];
-
-export function HistoricoVersoes({ versoes }: { versoes: Versao[] }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-
-  const versaoAtivaId = searchParams.get('v') || versoes[0]?.id;
-
-  const handleTrocarVersao = (versaoId: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    // 1. Define a versão desejada
-    params.set('v', versaoId);
-    
-    // 2. REMOVE o modo de edição ao trocar de versão
-    params.delete('edit');
-
-    startTransition(() => {
-      router.push(`?${params.toString()}`);
-    });
-  };
-
-  return (
-    <div className={`flex flex-wrap gap-2 mb-6 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
-      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest w-full mb-1">
-        Histórico de Versões (Clique para visualizar)
-      </p>
-
-      {/* Botão para Criar Nova Versão (entra em modo edit) */}
-      <button
-        type="button"
-        onClick={() => router.push(`?edit=true`)}
-        className="px-3 py-1.5 rounded-lg border border-dashed border-green-600 text-green-500 hover:bg-green-600/10 transition flex items-center gap-2 text-xs font-bold"
-      >
-        <Plus size={14} />
-        CRIAR NOVA VERSÃO
-      </button>
-
-      {/* Lista de Versões (sai do modo edit) */}
-      {versoes.map((v) => {
-        const isSelected = v.id === versaoAtivaId && !searchParams.get('edit');
-        return (
-          <button
-            key={v.id}
-            type="button"
-            onClick={() => handleTrocarVersao(v.id)}
-            className={`px-3 py-1.5 rounded-lg border transition flex items-center gap-2 ${
-              isSelected
-                ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20"
-                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600"
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-blue-500"}`}></span>
-            <span className="text-xs font-bold font-mono">v{v.versao_numero}</span>
-            <span className={`text-[9px] ${isSelected ? "text-blue-100" : "text-zinc-600"}`}>
-              {new Date(v.created_at!).toLocaleDateString('pt-BR')}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-</file>
-
 <file path="package.json">
 {
   "private": true,
@@ -2793,115 +2871,6 @@ export function HistoricoVersoes({ versoes }: { versoes: Versao[] }) {
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5"
   }
-}
-</file>
-
-<file path="app/dashboard/orcamentos/actions/salvarFluxoOrcamento.ts">
-"use server";
-
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { Database } from "@/lib/database.types";
-import { redirect } from "next/navigation"; // 1. Importar o redirect
-
-type VersaoInsert = Database['public']['Tables']['orcamento_versoes']['Insert'];
-
-interface FluxoOrcamentoPayload {
-  orcamentoId?: string;
-  clienteId: string;
-  titulo: string;
-  userId: string;
-  markup: number;
-  quantidadesVisiveis: number[];
-  valores: Array<{
-    insumo_id: string;
-    quantidade_referencia: number;
-    valor_custo_unitario_base: number;
-  }>;
-}
-
-export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
-  const supabase = await createClient();
-  let orcamentoId = payload.orcamentoId;
-
-  // 1. Criar Orçamento Base
-  if (!orcamentoId) {
-    const { data: orcamento, error: orcError } = await supabase
-      .from("orcamentos")
-      .insert({
-        cliente_id: payload.clienteId,
-        titulo: payload.titulo,
-        user_id: payload.userId,
-      })
-      .select().single();
-
-    if (orcError || !orcamento) throw new Error("Erro ao criar orçamento");
-    orcamentoId = orcamento.id;
-  }
-
-  // 2. Incrementar número da versão
-  const { data: versoes } = await supabase
-    .from("orcamento_versoes")
-    .select("versao_numero")
-    .eq("orcamento_id", orcamentoId)
-    .order("versao_numero", { ascending: false })
-    .limit(1);
-
-  const nextVersao = (versoes?.[0]?.versao_numero || 0) + 1;
-
-  // 3. Criar a Versão
-  const { data: versao, error: vError } = await supabase
-    .from("orcamento_versoes")
-    .insert({
-      orcamento_id: orcamentoId,
-      versao_numero: nextVersao,
-      descricao_alteracao: `Cálculo gerado em ${new Date().toLocaleString('pt-BR')}`,
-    } as VersaoInsert)
-    .select().single();
-
-  if (vError || !versao) throw new Error("Erro ao criar versão");
-
-  if (!payload.valores || !Array.isArray(payload.valores)) {
-    throw new Error("Os valores da grade são obrigatórios.");
-  }
-
-  // 4. Salvar Valores
-  const valoresInsert = payload.valores.map((v) => ({
-    versao_id: versao.id,
-    insumo_id: v.insumo_id,
-    valor_custo_unitario_base: v.valor_custo_unitario_base,
-    quantidade_referencia: v.quantidade_referencia 
-  }));
-
-  const { error: valError } = await supabase
-    .from("orcamento_versao_valores")
-    .insert(valoresInsert);
-
-  if (valError) throw new Error(`Erro ao salvar valores: ${valError.message}`);
-
-  console.log(payload);
-
-  // 5. Atualizar as Colunas do Orçamento
-  const quantidadesUnicas = payload.quantidadesVisiveis;
-
-  await supabase.from("orcamento_colunas").delete().eq("orcamento_id", orcamentoId);
-  
-  const { error: colError } = await supabase.from("orcamento_colunas").insert(
-    quantidadesUnicas.map((qtd, index) => ({
-      orcamento_id: orcamentoId,
-      quantidade: qtd,
-      ordem: index
-    }))
-  );
-
-  if (colError) throw new Error(`Erro ao atualizar colunas: ${colError.message}`);
-
-  // 6. Revalidar e Redirecionar
-  revalidatePath(`/dashboard/orcamentos/${orcamentoId}`);
-  
-  // Redireciona para o orçamento com o ID da versão recém criada no parâmetro 'v'
-  // Note que NÃO passamos 'edit=true' para que ele caia em modo de visualização
-  redirect(`/dashboard/orcamentos/${orcamentoId}?v=${versao.id}`);
 }
 </file>
 
@@ -3055,11 +3024,132 @@ export default function RootLayout({
 }
 </file>
 
+<file path="app/dashboard/orcamentos/actions/salvarFluxoOrcamento.ts">
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { Database } from "@/lib/database.types";
+import { redirect } from "next/navigation"; // 1. Importar o redirect
+
+type VersaoInsert = Database['public']['Tables']['orcamento_versoes']['Insert'];
+
+interface FluxoOrcamentoPayload {
+  orcamentoId?: string;
+  clienteId: string;
+  titulo: string;
+  userId: string;
+  markup: number;
+  quantidadesVisiveis: number[];
+  valores: Array<{
+    insumo_id: string;
+    quantidade_referencia: number;
+    valor_custo_unitario_base: number;
+  }>;
+}
+
+export async function salvarFluxoOrcamento(payload: FluxoOrcamentoPayload) {
+  const supabase = await createClient();
+  let orcamentoId = payload.orcamentoId;
+
+  // 1. Criar Orçamento Base
+  if (!orcamentoId) {
+    const { data: orcamento, error: orcError } = await supabase
+      .from("orcamentos")
+      .insert({
+        cliente_id: payload.clienteId,
+        titulo: payload.titulo,
+        user_id: payload.userId,
+      })
+      .select().single();
+
+    if (orcError || !orcamento) throw new Error("Erro ao criar orçamento");
+    orcamentoId = orcamento.id;
+  }
+
+  // 2. Incrementar número da versão
+  const { data: versoes } = await supabase
+    .from("orcamento_versoes")
+    .select("versao_numero")
+    .eq("orcamento_id", orcamentoId)
+    .order("versao_numero", { ascending: false })
+    .limit(1);
+
+  const nextVersao = (versoes?.[0]?.versao_numero || 0) + 1;
+
+  // 3. Criar a Versão
+  const { data: versao, error: vError } = await supabase
+    .from("orcamento_versoes")
+    .insert({
+      orcamento_id: orcamentoId,
+      versao_numero: nextVersao,
+      descricao_alteracao: `Cálculo gerado em ${new Date().toLocaleString('pt-BR')}`,
+    } as VersaoInsert)
+    .select().single();
+
+  if (vError || !versao) throw new Error("Erro ao criar versão");
+
+  if (!payload.valores || !Array.isArray(payload.valores)) {
+    throw new Error("Os valores da grade são obrigatórios.");
+  }
+
+  // 4. Salvar Valores
+  const valoresInsert = payload.valores.map((v) => ({
+    versao_id: versao.id,
+    insumo_id: v.insumo_id,
+    valor_custo_unitario_base: v.valor_custo_unitario_base,
+    quantidade_referencia: v.quantidade_referencia 
+  }));
+
+  const { error: valError } = await supabase
+    .from("orcamento_versao_valores")
+    .insert(valoresInsert);
+
+  if (valError) throw new Error(`Erro ao salvar valores: ${valError.message}`);
+
+  // 5. Atualizar as Colunas do Orçamento
+  const quantidadesUnicas = payload.quantidadesVisiveis;
+
+  await supabase.from("orcamento_colunas").delete().eq("orcamento_id", orcamentoId);
+  
+  const { error: colError } = await supabase.from("orcamento_colunas").insert(
+    quantidadesUnicas.map((qtd, index) => ({
+      orcamento_id: orcamentoId,
+      quantidade: qtd,
+      ordem: index
+    }))
+  );
+
+  if (colError) throw new Error(`Erro ao atualizar colunas: ${colError.message}`);
+
+  // 6. Revalidar e Redirecionar
+  revalidatePath(`/dashboard/orcamentos/${orcamentoId}`);
+  
+  // Redireciona para o orçamento com o ID da versão recém criada no parâmetro 'v'
+  // Note que NÃO passamos 'edit=true' para que ele caia em modo de visualização
+  redirect(`/dashboard/orcamentos/${orcamentoId}?v=${versao.id}`);
+}
+</file>
+
+<file path="app/page.tsx">
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function Home() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (data?.claims) {
+    redirect("/dashboard/orcamentos");
+  }
+  redirect("/autenticacao/entrar");
+}
+</file>
+
 <file path="components/orcamento/grade-orcamento.tsx">
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, X, ChevronDown, ChevronRight, Plus, Trash2, Search } from 'lucide-react';
+import { Calculator, X, ChevronDown, ChevronRight, Plus, Trash2, Search, Settings2 } from 'lucide-react';
 
 interface Insumo {
   id: string;
@@ -3074,11 +3164,35 @@ interface TipoPapel {
   f1: number; f2: number; f3: number; f4: number; f6: number; f8: number; f9: number;
 }
 
+interface InsumoWireo {
+  id: string;
+  diametro: string;
+  passo: string;
+  quantidade_caixa: number;
+  preco_caixa_base: number;
+  preco_caixa_especial: number;
+}
+
+interface InsumoEspiral {
+  id: string;
+  tamanho_mm: string;
+  preco_cento: number;
+}
+
+interface InsumoAcessorio {
+  id: string;
+  nome: string;
+  custo_unitario: number;
+}
+
 interface GradeOrcamentoProps {
   insumosIniciais: Insumo[];
   quantidadesPadrao: number[];
   markupInicial: number;
   tiposPapel: TipoPapel[];
+  wireoOptions: InsumoWireo[];
+  espiralOptions: InsumoEspiral[];
+  acessoriosOptions: InsumoAcessorio[];
   readOnly?: boolean; // NOVO: Propriedade para travar edição
 }
 
@@ -3087,6 +3201,9 @@ export function GradeOrcamento({
   quantidadesPadrao,
   markupInicial,
   tiposPapel,
+  wireoOptions,
+  espiralOptions,
+  acessoriosOptions,
   readOnly = false // Default falso para manter retrocompatibilidade
 }: GradeOrcamentoProps) {
   const [quantidades, setQuantidades] = useState<number[]>(quantidadesPadrao);
@@ -3094,6 +3211,19 @@ export function GradeOrcamento({
   const [markup, setMarkup] = useState<number>(markupInicial);
   const [custos, setCustos] = useState<Record<string, number>>({});
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  // Estados dos Modais
+  const [modalPapel, setModalPapel] = useState({ isOpen: false, insumoId: '' });
+  const [modalEncadernacao, setModalEncadernacao] = useState({ 
+    isOpen: false, 
+    insumoId: '', 
+    tipo: '' as 'wireo' | 'espiral' 
+  });
+  const [modalAcessorio, setModalAcessorio] = useState({ isOpen: false, insumoId: '', selectedId: '', quantidade: 1 });
+
+  // Estados de Cálculo
+  const [calcPapel, setCalcPapel] = useState({ papelId: '', formato: 'f4' as keyof TipoPapel, qtdFolhas: 1 });
+  const [calcEncadernacao, setCalcEncadernacao] = useState({ selectedId: '', corEspecial: false, quantidade: 1 });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeInsumoId, setActiveInsumoId] = useState<string | null>(null);
@@ -3127,7 +3257,7 @@ export function GradeOrcamento({
 
     setCustos(initCustos);
     setExpandedCategories(initExpanded);
-  }, [insumosIniciais]);
+  }, [insumosIniciais, wireoOptions, espiralOptions]);
 
   // DENTRO DE grade-orcamento.tsx
 
@@ -3145,8 +3275,6 @@ export function GradeOrcamento({
           valor_custo_unitario_base: custos[insumo.id]
         }))
       );
-
-      console.log(quantidades)
 
     const hiddenInput = document.getElementById('grade-dados-input') as HTMLInputElement;
     if (hiddenInput) {
@@ -3231,6 +3359,37 @@ export function GradeOrcamento({
     );
   }, [custos, quantidades, insumosIniciais]);
 
+  // --- LÓGICA DE CÁLCULO ENCADERNAÇÃO ---
+  const aplicarCalculoEncadernacao = () => {
+    let custoUnitario = 0;
+    if (modalEncadernacao.tipo === 'wireo') {
+      const item = wireoOptions.find(w => w.id === calcEncadernacao.selectedId);
+      if (item) {
+        const precoCaixa = calcEncadernacao.corEspecial ? item.preco_caixa_especial : item.preco_caixa_base;
+        custoUnitario = precoCaixa / item.quantidade_caixa;
+      }
+    } else {
+      const item = espiralOptions.find(e => e.id === calcEncadernacao.selectedId);
+      if (item) custoUnitario = item.preco_cento / 100;
+    }
+    const quantidade = calcEncadernacao.quantidade > 0 ? calcEncadernacao.quantidade : 1;
+    const custoTotal = custoUnitario * quantidade;
+    setCustos(prev => ({ ...prev, [modalEncadernacao.insumoId]: Number(custoTotal.toFixed(4)) }));
+    setModalEncadernacao({ isOpen: false, insumoId: '', tipo: '' as any });
+    setCalcEncadernacao({ selectedId: '', corEspecial: false, quantidade: 1 });
+  };
+
+  // Lógica do modal de acessório
+  const aplicarCalculoAcessorio = () => {
+    const acessorio = acessoriosOptions.find(a => a.id === modalAcessorio.selectedId);
+    const quantidade = modalAcessorio.quantidade > 0 ? modalAcessorio.quantidade : 1;
+    if (acessorio && modalAcessorio.insumoId) {
+      const custoTotal = acessorio.custo_unitario * quantidade;
+      setCustos(prev => ({ ...prev, [modalAcessorio.insumoId]: Number(custoTotal.toFixed(4)) }));
+    }
+    setModalAcessorio({ isOpen: false, insumoId: '', selectedId: '', quantidade: 1 });
+  };
+
   return (
     <div>
       <input type="hidden" name="grade_dados" id="grade-dados-input" />
@@ -3302,6 +3461,10 @@ export function GradeOrcamento({
                   </tr>
                   {isExpanded && items.map(item => {
                     const isPapel = item.nome.toLowerCase().includes('papel') && !item.nome.toLowerCase().includes('papelão');
+                    const isWireo = item.nome.toLowerCase().includes('wire-o');
+                    const isEspiral = item.nome.toLowerCase().includes('espiral');
+                    const isAcessorio = ['acessório 1', 'acessório 2', 'acessório 3'].includes(item.nome.trim().toLowerCase());
+
                     return (
                       <tr key={item.id} className="hover:bg-zinc-800/10 transition group">
                         <td className="p-4 text-zinc-300 font-medium">{item.nome}</td>
@@ -3318,15 +3481,102 @@ export function GradeOrcamento({
                                 className="w-full bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 pl-7 text-right tabular-nums text-zinc-400 focus:text-blue-400 outline-none disabled:opacity-50"
                               />
                             </div>
-                            {isPapel && !readOnly && (
+                            {!readOnly && (isPapel || isWireo || isEspiral || isAcessorio) && (
                               <button
                                 type="button"
-                                onClick={() => { setActiveInsumoId(item.id); setIsModalOpen(true); }}
-                                className="p-2 bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 rounded-lg transition"
+                                onClick={() => {
+                                  if (isPapel) {
+                                    setIsModalOpen(true);
+                                    setActiveInsumoId(item.id);
+                                  } else if (isWireo || isEspiral) {
+                                    setModalEncadernacao({ 
+                                      isOpen: true, 
+                                      insumoId: item.id, 
+                                      tipo: isWireo ? 'wireo' : 'espiral' 
+                                    });
+                                  } else if (isAcessorio) {
+                                    setModalAcessorio({ isOpen: true, insumoId: item.id, selectedId: '', quantidade: 1 });
+                                  }
+                                }}
+                                className="p-1.5 bg-blue-600/10 text-blue-400 rounded-md hover:bg-blue-600 hover:text-white transition-all"
                               >
-                                <Calculator size={16} />
+                                <Calculator size={14} />
                               </button>
                             )}
+                                {/* MODAL ACESSÓRIO */}
+                                {modalAcessorio.isOpen && (
+                                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+                                      <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-white font-bold flex items-center gap-2 uppercase tracking-wider text-sm">
+                                          <Settings2 className="text-blue-500" size={18} />
+                                          Calc. Acessório
+                                        </h3>
+                                        <button onClick={() => setModalAcessorio({ ...modalAcessorio, isOpen: false })} className="text-zinc-500 hover:text-white">
+                                          <X size={20} />
+                                        </button>
+                                      </div>
+                                      <div className="space-y-4">
+                                        <div>
+                                          <label className="text-[10px] font-bold text-zinc-500 uppercase mb-1.5 block">Selecione o Acessório</label>
+                                          <select
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-white outline-none"
+                                            value={modalAcessorio.selectedId}
+                                            onChange={e => setModalAcessorio({ ...modalAcessorio, selectedId: e.target.value })}
+                                          >
+                                            <option value="">Selecione...</option>
+                                            {(acessoriosOptions || []).map(a => (
+                                              <option key={a.id} value={a.id}>{a.nome} - R$ {a.custo_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 4 })}</option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-bold text-zinc-500 uppercase mb-1.5 block">Quantidade</label>
+                                          <input
+                                            type="number"
+                                            min={1}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-white outline-none"
+                                            value={modalAcessorio.quantidade}
+                                            onChange={e => setModalAcessorio({ ...modalAcessorio, quantidade: Number(e.target.value) })}
+                                          />
+                                        </div>
+                                        <div className="bg-blue-600/5 border border-blue-500/20 p-4 rounded-xl mt-2 space-y-2">
+                                          <div className="flex justify-between text-[11px] text-zinc-400">
+                                            <span>Valor unitário:</span>
+                                            <span className="text-zinc-300">
+                                              {(() => {
+                                                const acessorio = acessoriosOptions.find(a => a.id === modalAcessorio.selectedId);
+                                                return acessorio ? `R$ ${acessorio.custo_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 4 })}` : 'R$ 0,0000';
+                                              })()}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between text-[11px] text-zinc-400">
+                                            <span>Quantidade:</span>
+                                            <span className="text-zinc-300">{modalAcessorio.quantidade}</span>
+                                          </div>
+                                          <div className="flex justify-between text-sm font-bold text-white border-t border-zinc-800 pt-2">
+                                            <span>Custo Total:</span>
+                                            <span className="text-blue-400">
+                                              {(() => {
+                                                const acessorio = acessoriosOptions.find(a => a.id === modalAcessorio.selectedId);
+                                                const quantidade = modalAcessorio.quantidade > 0 ? modalAcessorio.quantidade : 1;
+                                                return acessorio ? (acessorio.custo_unitario * quantidade).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00';
+                                              })()}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={aplicarCalculoAcessorio}
+                                          disabled={!modalAcessorio.selectedId}
+                                          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all mt-4"
+                                        >
+                                          APLICAR VALOR
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                           </div>
                         </td>
                         {quantidades.map((q, i) => (
@@ -3363,6 +3613,111 @@ export function GradeOrcamento({
           </tfoot>
         </table>
       </div>
+
+      {/* MODAL ENCADERNAÇÃO (Wire-o / Espiral) */}
+      {modalEncadernacao.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-white font-bold flex items-center gap-2 uppercase tracking-wider text-sm">
+                <Settings2 className="text-blue-500" size={18} />
+                Calc. {modalEncadernacao.tipo === 'wireo' ? 'Wire-o' : 'Espiral'}
+              </h3>
+              <button onClick={() => setModalEncadernacao({ ...modalEncadernacao, isOpen: false })} className="text-zinc-500 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase mb-1.5 block">Selecione o Diâmetro / Tamanho</label>
+                <select 
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-white outline-none"
+                  value={calcEncadernacao.selectedId}
+                  onChange={(e) => setCalcEncadernacao({ ...calcEncadernacao, selectedId: e.target.value })}
+                >
+                  <option value="">Selecione...</option>
+                  {modalEncadernacao.tipo === 'wireo' 
+                    ? (wireoOptions || []).map(w => <option key={w.id} value={w.id}>{w.diametro} ({w.passo}) - {w.quantidade_caixa}un</option>)
+                    : (espiralOptions || []).map(e => <option key={e.id} value={e.id}>{e.tamanho_mm}</option>)
+                  }
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase mb-1.5 block">Quantidade</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-white outline-none"
+                  value={calcEncadernacao.quantidade}
+                  onChange={e => setCalcEncadernacao({ ...calcEncadernacao, quantidade: Number(e.target.value) })}
+                />
+              </div>
+              <div className="bg-blue-600/5 border border-blue-500/20 p-4 rounded-xl mt-2 space-y-2">
+                <div className="flex justify-between text-[11px] text-zinc-400">
+                  <span>Valor unitário:</span>
+                  <span className="text-zinc-300">
+                    {(() => {
+                      let valor = 0;
+                      if (modalEncadernacao.tipo === 'wireo') {
+                        const item = wireoOptions.find(w => w.id === calcEncadernacao.selectedId);
+                        if (item) valor = (calcEncadernacao.corEspecial ? item.preco_caixa_especial : item.preco_caixa_base) / item.quantidade_caixa;
+                      } else {
+                        const item = espiralOptions.find(e => e.id === calcEncadernacao.selectedId);
+                        if (item) valor = item.preco_cento / 100;
+                      }
+                      return `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 4 })}`;
+                    })()}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[11px] text-zinc-400">
+                  <span>Quantidade:</span>
+                  <span className="text-zinc-300">{calcEncadernacao.quantidade}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold text-white border-t border-zinc-800 pt-2">
+                  <span>Custo Total:</span>
+                  <span className="text-blue-400">
+                    {(() => {
+                      let valor = 0;
+                      if (modalEncadernacao.tipo === 'wireo') {
+                        const item = wireoOptions.find(w => w.id === calcEncadernacao.selectedId);
+                        if (item) valor = (calcEncadernacao.corEspecial ? item.preco_caixa_especial : item.preco_caixa_base) / item.quantidade_caixa;
+                      } else {
+                        const item = espiralOptions.find(e => e.id === calcEncadernacao.selectedId);
+                        if (item) valor = item.preco_cento / 100;
+                      }
+                      return (valor * (calcEncadernacao.quantidade > 0 ? calcEncadernacao.quantidade : 1)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    })()}
+                  </span>
+                </div>
+              </div>
+
+              {modalEncadernacao.tipo === 'wireo' && (
+                <div className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-xl border border-zinc-800">
+                  <input 
+                    type="checkbox" 
+                    id="corEspecial" 
+                    className="w-4 h-4 accent-blue-600"
+                    onChange={(e) => setCalcEncadernacao({ ...calcEncadernacao, corEspecial: e.target.checked })}
+                  />
+                  <label htmlFor="corEspecial" className="text-xs text-zinc-300 cursor-pointer">
+                    Utilizar Cor Especial (Prata/Bronze/Cores)
+                  </label>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={aplicarCalculoEncadernacao}
+                disabled={!calcEncadernacao.selectedId}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all mt-4"
+              >
+                APLICAR VALOR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DA CALCULADORA */}
       {isModalOpen && (
@@ -3487,20 +3842,6 @@ export function GradeOrcamento({
 }
 </file>
 
-<file path="app/page.tsx">
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-
-export default async function Home() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  if (data?.claims) {
-    redirect("/dashboard/orcamentos");
-  }
-  redirect("/autenticacao/entrar");
-}
-</file>
-
 <file path="app/dashboard/orcamentos/[id]/page.tsx">
 export const dynamic = 'force-dynamic';
 
@@ -3526,10 +3867,17 @@ export default async function OrcamentoPage({
 
     const isVisualizandoHistorico = !!versaoIdSolicitada && edit !== 'true';
 
-    const { data: tiposPapel } = await supabase
-        .from('tipos_papel')
-        .select('*')
-        .order('nome');
+    const [
+        { data: tiposPapel },
+        { data: wireo },
+        { data: espiral },
+        { data: acessorios }
+    ] = await Promise.all([
+        supabase.from('tipos_papel').select('*').order('nome'),
+        supabase.from('insumos_wireo').select('*').order('preco_caixa_base'),
+        supabase.from('insumos_espiral').select('*').order('tamanho_mm'),
+        supabase.from('insumos_acessorios').select('*').order('nome')
+    ]);
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect('/autenticacao/entrar');
@@ -3692,6 +4040,9 @@ export default async function OrcamentoPage({
                     </div>
 
                     <GradeOrcamento
+                        wireoOptions={wireo || []}
+                        espiralOptions={espiral || []}
+                        acessoriosOptions={acessorios || []}
                         tiposPapel={tiposPapel || []}
                         insumosIniciais={insumosParaGrade}
                         quantidadesPadrao={quantidadesIniciais}

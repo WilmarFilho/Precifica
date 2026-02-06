@@ -7,10 +7,11 @@ import { Menu, X } from "lucide-react";
 
 export function DashboardHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+  
   const navLinks = [
-    { href: "/dashboard/orcamentos", label: "Orçamentos" },
-    { href: "/dashboard/clientes", label: "Clientes" },
+      { href: "/dashboard/orcamentos", label: "Orçamentos" },
+      { href: "/dashboard/clientes", label: "Clientes" },
+      { href: "/dashboard/precos", label: "Tabela de Preços" }, // Novo link
   ];
 
   return (
