@@ -1,5 +1,7 @@
 'use client';
 
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Calculator, X, ChevronDown, ChevronRight, Plus, Trash2, Search, Settings2 } from 'lucide-react';
 
@@ -58,11 +60,89 @@ export function GradeOrcamento({
   acessoriosOptions,
   readOnly = false // Default falso para manter retrocompatibilidade
 }: GradeOrcamentoProps) {
+
   const [quantidades, setQuantidades] = useState<number[]>(quantidadesPadrao);
 
   const [markup, setMarkup] = useState<number>(markupInicial);
   const [custos, setCustos] = useState<Record<string, number>>({});
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const escutarGerarPDF = (event: any) => {
+      const { projeto, cliente, usuario, versao } = event.detail;
+      
+      const doc = new jsPDF();
+      
+      // Cabeçalho
+      doc.setFontSize(18);
+      doc.text("Relatório de Orçamento", 14, 20);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Projeto: ${projeto}`, 14, 30);
+      doc.text(`Cliente: ${cliente}`, 14, 35);
+      doc.text(`Versão: ${versao} | Emitido por: ${usuario}`, 14, 40);
+      doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, 45);
+
+      // 1. Preparar as colunas (Headers) baseadas nas quantidades dinâmicas
+      const headers = ['Insumo', 'Categoria', ...quantidades.map(q => `${q} un`)];
+
+      // 2. Preparar as linhas (Rows) filtrando apenas o que tem custo
+      const rows = insumosIniciais
+        .filter(insumo => (custos[insumo.id] || 0) > 0)
+        .map(insumo => {
+          const custoBase = custos[insumo.id] || 0;
+          const valoresColunas = quantidades.map(q => {
+            const valorCalculado = (custoBase / 100) * q;
+            return valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+          });
+
+          return [
+            insumo.nome,
+            insumo.categoria || 'Outros',
+            ...valoresColunas
+          ];
+        });
+
+      // 3. Adicionar a tabela de Insumos
+      autoTable(doc, {
+        startY: 55,
+        head: [headers],
+        body: rows,
+        theme: 'striped',
+        headStyles: { fillColor: [40, 40, 40] },
+        styles: { fontSize: 8 }
+      });
+
+      // 4. Calcular Totais Finais (Venda com Markup)
+      const finalY = (doc as any).lastAutoTable.finalY + 10;
+      
+      const linhaVenda = [
+        `PREÇO DE VENDA (${markup}%)`,
+        '',
+        ...quantidades.map(q => {
+          const totalCusto = insumosIniciais.reduce((acc, insumo) => {
+            return acc + ((custos[insumo.id] || 0) / 100) * q;
+          }, 0);
+          const precoVenda = totalCusto * (1 + markup / 100);
+          return precoVenda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        })
+      ];
+
+      autoTable(doc, {
+        startY: finalY,
+        body: [linhaVenda],
+        styles: { fontStyle: 'bold', fontSize: 10, fillColor: [230, 240, 255] },
+        columnStyles: { 0: { cellWidth: 50 } }
+      });
+
+      // Salvar
+      doc.save(`Orcamento_${projeto.replace(/\s+/g, '_')}.pdf`);
+    };
+
+    window.addEventListener('gerar-pdf-orcamento', escutarGerarPDF);
+    return () => window.removeEventListener('gerar-pdf-orcamento', escutarGerarPDF);
+  }, [insumosIniciais, custos, markup, quantidades]); 
 
   // Estados dos Modais
   const [modalPapel, setModalPapel] = useState({ isOpen: false, insumoId: '' });

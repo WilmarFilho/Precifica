@@ -8,6 +8,7 @@ import { HistoricoVersoes } from '@/components/orcamento/historico-versoes';
 import { salvarFluxoOrcamento } from "../actions/salvarFluxoOrcamento";
 import { atualizarTituloOrcamento } from "@/app/dashboard/orcamentos/actions/atualizarTitulo";
 import { BotaoSalvar } from '@/components/ui/botaoSalvar';
+import { BotaoExportarPDF } from '@/components/orcamento/BotaoExportarPDF';
 
 export default async function OrcamentoPage({
     params,
@@ -39,8 +40,11 @@ export default async function OrcamentoPage({
 
     const { data: clientes } = await supabase.from('clientes').select('id, nome').order('nome');
 
-    let insumosParaGrade = [];
     let orcamentoExistente: { id: string; titulo: string; cliente_id: string } | null = null;
+    // Lógica para encontrar o nome do cliente atual para o PDF
+    const clienteAtual = clientes?.find(c => c.id === orcamentoExistente?.cliente_id);
+
+    let insumosParaGrade = [];
     let versoes = [];
     let quantidadesIniciais = [100]; // Padrão para novo orçamento é apenas 100
 
@@ -208,8 +212,16 @@ export default async function OrcamentoPage({
                             </select>
                         </section>
 
-                        {/* Só exibe o botão salvar se não estiver visualizando histórico antigo */}
-                        {!isVisualizandoHistorico && <BotaoSalvar />}
+                        {isVisualizandoHistorico ? (
+                            <BotaoExportarPDF 
+                                projeto={orcamentoExistente?.titulo}
+                                cliente={clienteAtual?.nome}
+                                usuario={user?.email}
+                                versao={versaoIdSolicitada}
+                            />
+                        ) : (
+                            <BotaoSalvar />
+                        )}
                     </div>
 
                     <GradeOrcamento
