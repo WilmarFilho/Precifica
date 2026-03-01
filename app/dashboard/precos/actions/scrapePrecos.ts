@@ -4,35 +4,54 @@
 import { chromium } from 'playwright';
 
 export async function buscarPrecosExternos() {
-    const isProduction = process.env.NODE_ENV === 'production';
-    
+    // Definindo um User-Agent de um Chrome real no Windows
+    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
     const browser = await chromium.launch({ 
-        // Em produção, SEMPRE true. Em local, pode ser false para você ver.
         headless: true, 
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox', 
-            '--disable-dev-shm-usage', // Previne crash em containers com pouca memória RAM
+            '--disable-dev-shm-usage',
             '--disable-gpu'
         ]
     });
 
     try {
-        const context = await browser.newContext();
+        // Criamos o contexto com um tamanho de tela padrão e User-Agent real
+        const context = await browser.newContext({
+            userAgent,
+            viewport: { width: 1280, height: 720 }
+        });
+        
         const page = await context.newPage();
 
-        // 1. Ir para login
+        console.log("Acessando página de login da Suzano...");
+        
+        // Aumentamos o timeout e esperamos a rede acalmar
         await page.goto('https://loja.suzano.com.br/suzano/pt/login', { 
-            waitUntil: 'domcontentloaded' 
+            waitUntil: 'networkidle',
+            timeout: 60000 
         });
 
-        // 2. Login (Use o ID que você encontrou!)
-        await page.fill('input[name="j_username"]', process.env.FORNECEDOR_USER!);
-        await page.fill('input[name="j_password"]', process.env.FORNECEDOR_PASS!);
-        await page.click('#login-btn-check', { force: true });
+        // Verificação extra: Tirar um print se houver erro (ajuda muito a debugar)
+        // await page.screenshot({ path: 'debug_login.png' });
 
-        // 3. Esperar redirecionar
-        await page.waitForURL(url => url.href.includes('/pt'), { timeout: 20000 });
+        console.log("Preenchendo credenciais...");
+        
+        // Usando seletores mais resilientes (por ID costuma ser melhor que Name)
+        const userField = 'input#j_username';
+        const passField = 'input#j_password';
+        
+        await page.waitForSelector(userField, { timeout: 15000 });
+        await page.fill(userField, process.env.FORNECEDOR_USER || '');
+        await page.fill(passField, process.env.FORNECEDOR_PASS || '');
+        
+        console.log("Clicando no botão de login...");
+        await page.click('#login-btn-check');
+
+        // Espera o carregamento pós-login
+        await page.waitForLoadState('networkidle');
 
         // 4. Ir para o produto
         await page.goto('https://loja.suzano.com.br/suzano/pt/Papel-Gr%C3%A1fico/Papel-Couch%C3%A9-Design/c/COUCHE_SZ_DESIGN');
