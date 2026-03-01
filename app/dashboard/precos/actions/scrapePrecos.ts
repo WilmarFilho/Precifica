@@ -102,3 +102,5 @@ export async function buscarPrecosExternos() {
         await browser.close();
     }
 }
+
+

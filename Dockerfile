@@ -17,6 +17,13 @@
     ENV NEXT_TELEMETRY_DISABLED 1
     ENV PORT 3002
     
+    # Instalar Xvfb e dependências gráficas necessárias
+    RUN apt-get update && apt-get install -y \
+        xvfb \
+        libgbm1 \
+        libasound2 \
+        && rm -rf /var/lib/apt/lists/*
+    
     # Copiar os arquivos do build standalone
     COPY --from=builder /app/.next/standalone ./
     COPY --from=builder /app/.next/static ./.next/static
@@ -24,10 +31,8 @@
     # Proteção para a pasta public
     RUN if [ -d "/app/public" ]; then cp -r /app/public ./public; fi
     
-    # CORREÇÃO: Instalar o playwright globalmente no runner para ter o comando disponível
-    # Ou usar o npx diretamente garantindo a instalação do binário
-    RUN npm install -g playwright && npx playwright install chromium
-    
     EXPOSE 3002
     
-    CMD ["node", "server.js"]
+    # O segredo está no CMD: Rodamos o servidor dentro do xvfb-run
+    # Isso cria um monitor virtual de 1280x1024 antes de iniciar o Node
+    CMD ["xvfb-run", "--server-args=-screen 0 1280x1024x24", "node", "server.js"]
