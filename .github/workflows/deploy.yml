@@ -22,7 +22,6 @@ jobs:
             # 2. Sincronizar com o commit atual
             if [ ! -d ".git" ]; then
               echo "Repositório não encontrado localmente. Clonando..."
-              find . -mindepth 1 -delete
               git clone https://github.com/WilmarFilho/Precifica.git .
             else
               echo "Sincronizando repositório existente..."
@@ -30,10 +29,17 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # 3. Docker Compose (Sempre com hífen conforme solicitado)
-            # Nota: Certifique-se de ter o Alias ou a versão V1 instalada na VPS
-            docker-compose down
-            docker-compose up -d --build
+            # 3. Docker Compose (Compatibilidade V2)
+            # Tentamos 'docker compose' (V2), se falhar, tentamos 'docker-compose' (V1)
+            if docker compose version > /dev/null 2>&1; then
+              COMPOSE_CMD="docker compose"
+            else
+              COMPOSE_CMD="docker-compose"
+            fi
 
-            # 4. Limpeza de imagens antigas para poupar espaço
+            echo "Usando comando: $COMPOSE_CMD"
+            $COMPOSE_CMD down
+            $COMPOSE_CMD up -d --build
+
+            # 4. Limpeza de imagens antigas
             docker image prune -f
