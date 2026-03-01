@@ -4,8 +4,7 @@
 import { chromium } from 'playwright';
 
 export async function buscarPrecosExternos() {
-    // Definindo um User-Agent de um Chrome real no Windows
-    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
     const browser = await chromium.launch({ 
         headless: true, 
@@ -13,61 +12,91 @@ export async function buscarPrecosExternos() {
             '--no-sandbox', 
             '--disable-setuid-sandbox', 
             '--disable-dev-shm-usage',
-            '--disable-gpu'
+            '--disable-gpu',
+            '--disable-blink-features=AutomationControlled' // Ajuda a evitar detecção de bot
         ]
     });
 
     try {
-        // Criamos o contexto com um tamanho de tela padrão e User-Agent real
         const context = await browser.newContext({
             userAgent,
-            viewport: { width: 1280, height: 720 }
+            viewport: { width: 1280, height: 720 },
+            locale: 'pt-BR'
         });
         
         const page = await context.newPage();
 
-        console.log("Acessando página de login da Suzano...");
+        console.log("🚀 Acessando Suzano...");
         
-        // Aumentamos o timeout e esperamos a rede acalmar
+        // Timeout maior para o carregamento inicial da página
         await page.goto('https://loja.suzano.com.br/suzano/pt/login', { 
-            waitUntil: 'networkidle',
+            waitUntil: 'domcontentloaded', 
             timeout: 60000 
         });
 
-        // Verificação extra: Tirar um print se houver erro (ajuda muito a debugar)
-        // await page.screenshot({ path: 'debug_login.png' });
+        console.log("✍️ Preenchendo credenciais...");
+        
+        // Seletores baseados no HTML fornecido
+        const userSelector = 'input#j_username';
+        const passSelector = 'input#j_password';
+        const submitBtn = 'button#login-btn-check';
 
-        console.log("Preenchendo credenciais...");
+        // Espera o campo estar visível e pronto para receber dados
+        await page.waitForSelector(userSelector, { state: 'visible', timeout: 30000 });
         
-        // Usando seletores mais resilientes (por ID costuma ser melhor que Name)
-        const userField = 'input#j_username';
-        const passField = 'input#j_password';
-        
-        await page.waitForSelector(userField, { timeout: 15000 });
-        await page.fill(userField, process.env.FORNECEDOR_USER || '');
-        await page.fill(passField, process.env.FORNECEDOR_PASS || '');
-        
-        console.log("Clicando no botão de login...");
-        await page.click('#login-btn-check');
+        // Pequena pausa para garantir que scripts de validação carregaram
+        await page.waitForTimeout(1000);
 
-        // Espera o carregamento pós-login
-        await page.waitForLoadState('networkidle');
-
-        // 4. Ir para o produto
-        await page.goto('https://loja.suzano.com.br/suzano/pt/Papel-Gr%C3%A1fico/Papel-Couch%C3%A9-Design/c/COUCHE_SZ_DESIGN');
+        // Foca e preenche (mais seguro que apenas .fill em alguns sites)
+        await page.focus(userSelector);
+        await page.fill(userSelector, process.env.FORNECEDOR_USER || '');
         
-        // 5. Pegar o preço
+        await page.focus(passSelector);
+        await page.fill(passSelector, process.env.FORNECEDOR_PASS || '');
+        
+        console.log("🖱️ Clicando no botão de login...");
+        
+        // Clica e aguarda a navegação de uma vez só
+        await Promise.all([
+            page.click(submitBtn),
+            page.waitForNavigation({ waitUntil: 'networkidle', timeout: 60000 }).catch(() => console.log("Aviso: Navegação demorada, continuando..."))
+        ]);
+
+        console.log("📦 Indo para a página do produto...");
+        await page.goto('https://loja.suzano.com.br/suzano/pt/Papel-Gr%C3%A1fico/Papel-Couch%C3%A9-Design/c/COUCHE_SZ_DESIGN', {
+            waitUntil: 'networkidle',
+            timeout: 80000
+        });
+        
+        console.log("💰 Extraindo preço...");
         const seletorPreco = '.priceSuzanoAjax';
-        await page.waitForSelector(seletorPreco, { timeout: 30000 });
+        
+        // Espera o seletor de preço aparecer (ele parece ser carregado via Ajax)
+        await page.waitForSelector(seletorPreco, { state: 'attached', timeout: 30000 });
+        
         const precoTexto = await page.locator(seletorPreco).first().innerText();
         
-        // Limpar o texto (ex: "R$ 278,07" -> 278.07)
-        const valorNumerico = parseFloat(precoTexto.replace(/[^\d,]/g, '').replace(',', '.'));
+        // Limpeza robusta do valor
+        const valorNumerico = parseFloat(
+            precoTexto
+                .replace('R$', '')
+                .replace(/\./g, '') // Remove pontos de milhar
+                .replace(',', '.')  // Troca vírgula decimal por ponto
+                .trim()
+        );
 
-        return { success: true, data: { valor: valorNumerico, texto: precoTexto } };
+        console.log(`✅ Sucesso: ${precoTexto} -> ${valorNumerico}`);
+
+        return { 
+            success: true, 
+            data: { 
+                valor: valorNumerico, 
+                texto: precoTexto.trim() 
+            } 
+        };
 
     } catch (error: any) {
-        console.error("Erro no scraping em produção:", error.message);
+        console.error("🚨 Erro no scraping:", error.message);
         return { success: false, error: error.message };
     } finally {
         await browser.close();
