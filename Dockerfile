@@ -1,5 +1,5 @@
 # --- STAGE 1: BUILD ---
-    FROM mcr.microsoft.com/playwright:v1.45.0-jammy AS builder
+    FROM mcr.microsoft.com/playwright:v1.50.0-jammy AS builder
     WORKDIR /app
     
     COPY package.json package-lock.json ./
@@ -10,7 +10,7 @@
     RUN npm run build
     
     # --- STAGE 2: RUNTIME ---
-    FROM mcr.microsoft.com/playwright:v1.45.0-jammy AS runner
+    FROM mcr.microsoft.com/playwright:v1.50.0-jammy AS runner
     WORKDIR /app
     
     ENV NODE_ENV production
