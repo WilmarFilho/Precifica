@@ -1,10 +1,8 @@
-import type { NextConfig } from "next";
-
+/** @type {import('next').NextConfig} */
 const nextConfig = {
     output: 'standalone',
-    experimental: {
-      serverComponentsExternalPackages: ['playwright', 'playwright-core'],
-    },
+    // A chave correta agora é esta:
+    serverExternalPackages: ['playwright', 'playwright-core'],
   }
-
-export default nextConfig;
+  
+  export default nextConfig;
