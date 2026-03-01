@@ -7,7 +7,7 @@ export async function buscarPrecosExternos() {
     const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
     const browser = await chromium.launch({ 
-        headless: true, 
+        headless: false, 
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox', 
@@ -37,9 +37,9 @@ export async function buscarPrecosExternos() {
         console.log("✍️ Preenchendo credenciais...");
         
         // Seletores baseados no HTML fornecido
-        const userSelector = 'input#j_username';
-        const passSelector = 'input#j_password';
-        const submitBtn = 'button#login-btn-check';
+        const userSelector = 'input[name="j_username"]';
+        const passSelector = 'input[name="j_password"]';
+        const buttonSelector = 'button#login-btn-check';
 
         // Espera o campo estar visível e pronto para receber dados
         await page.waitForSelector(userSelector, { state: 'visible', timeout: 30000 });
@@ -58,7 +58,7 @@ export async function buscarPrecosExternos() {
         
         // Clica e aguarda a navegação de uma vez só
         await Promise.all([
-            page.click(submitBtn),
+            page.click(buttonSelector),
             page.waitForNavigation({ waitUntil: 'networkidle', timeout: 60000 }).catch(() => console.log("Aviso: Navegação demorada, continuando..."))
         ]);
 
