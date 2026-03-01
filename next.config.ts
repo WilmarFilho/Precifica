@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+const nextConfig = {
     output: 'standalone',
-};
+    experimental: {
+      serverComponentsExternalPackages: ['playwright', 'playwright-core'],
+    },
+  }
 
 export default nextConfig;

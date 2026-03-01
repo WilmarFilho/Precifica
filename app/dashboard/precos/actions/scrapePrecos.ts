@@ -1,3 +1,4 @@
+"use server";
 // app/dashboard/precos/actions/scrapePrecos.ts
 
 import { chromium } from 'playwright';
