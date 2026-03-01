@@ -26,7 +26,7 @@ export async function buscarPrecosExternos() {
         
         const page = await context.newPage();
 
-        console.log("🚀 Acessando Suzano....");
+        console.log("🚀 Acessando Suzano...");
         
         // Timeout maior para o carregamento inicial da página
         await page.goto('https://loja.suzano.com.br/suzano/pt/login', { 
