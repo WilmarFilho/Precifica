@@ -31,3 +31,4 @@ export async function atualizarPrecosInsumos(dados: any[]) {
     revalidatePath('/dashboard/precos');
     return { ok: true };
 }
+

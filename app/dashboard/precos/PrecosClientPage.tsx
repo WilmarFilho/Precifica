@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Loader2, Database, Settings2, Paperclip, Scissors, FileText } from 'lucide-react';
+import { Save, Loader2, Database, Settings2, Paperclip, Scissors, FileText, Globe } from 'lucide-react';
 import { atualizarPrecosInsumos } from './actions/atualizarPrecos';
+import { buscarPrecosExternos } from './actions/scrapePrecos';
 
 export default function PrecosClientPage({ data }: { data: any[] }) {
     // Inicializa o estado com os dados vindos do servidor
     const [editados, setEditados] = useState<any[]>(data);
     const [isSaving, setIsSaving] = useState(false);
+    const [isScraping, setIsScraping] = useState(false);
 
     // Sincroniza o estado se os dados do servidor mudarem (refresh da página)
     useEffect(() => {
@@ -16,9 +18,24 @@ export default function PrecosClientPage({ data }: { data: any[] }) {
     }, [data]);
 
     const handleChange = (id: string, campo: string, valor: number) => {
-        setEditados(prev => prev.map(item => 
+        setEditados(prev => prev.map(item =>
             item.id === id ? { ...item, [campo]: valor } : item
         ));
+    };
+
+    // Função para rodar o Scraping e atualizar o estado local
+    const handleScrapeSuzano = async () => {
+        setIsScraping(true);
+        try {
+            const result = await buscarPrecosExternos();
+
+            console.log(result);
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao executar o robô de busca.");
+        } finally {
+            setIsScraping(false);
+        }
     };
 
     const handleSalvar = async () => {
@@ -41,18 +58,31 @@ export default function PrecosClientPage({ data }: { data: any[] }) {
                     <h1 className="text-3xl font-bold text-white tracking-tight">Gestão de Preços</h1>
                     <p className="text-zinc-500 text-sm mt-1">Atualize os custos base que alimentam os orçamentos.</p>
                 </div>
-                <button 
-                    onClick={handleSalvar}
-                    disabled={isSaving}
-                    className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl flex gap-2 items-center disabled:opacity-50 transition-all font-bold shadow-lg shadow-blue-900/20"
-                >
-                    {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                    {isSaving ? "SALVANDO..." : "SALVAR ALTERAÇÕES"}
-                </button>
+                <div className="flex gap-2 flex-col ">
+                    <button
+                        onClick={handleScrapeSuzano}
+                        disabled={isScraping || isSaving}
+                        className="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-3 rounded-xl flex gap-2 items-center disabled:opacity-50 transition-all font-bold border border-zinc-700"
+                    >
+                        {isScraping ? <Loader2 className="animate-spin" size={20} /> : <Globe size={20} />}
+                        {isScraping ? "CONECTANDO SUZANO..." : "SINCRONIZAR SUZANO"}
+                    </button>
+
+                    <button
+                        onClick={handleSalvar}
+                        disabled={isSaving}
+                        className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl flex gap-2 items-center disabled:opacity-50 transition-all font-bold shadow-lg shadow-blue-900/20"
+                    >
+                        {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                        {isSaving ? "SALVANDO..." : "SALVAR ALTERAÇÕES"}
+                    </button>
+                </div>
+                {/* NOVO BOTÃO DE SCRAPING */}
+
             </header>
 
             <div className="grid gap-12">
-                
+
                 {/* TABELA DE PAPÉIS */}
                 <section>
                     <div className="flex items-center gap-2 mb-4 text-yellow-500 text-xs font-bold uppercase tracking-widest">
@@ -79,8 +109,8 @@ export default function PrecosClientPage({ data }: { data: any[] }) {
                                         <td className="p-4 text-white font-medium sticky left-0 bg-zinc-900 shadow-xl">{item.nome}</td>
                                         {['f1', 'f2', 'f3', 'f4', 'f6', 'f8', 'f9'].map(f => (
                                             <td key={f} className="p-2 text-center">
-                                                <input 
-                                                    type="number" 
+                                                <input
+                                                    type="number"
                                                     step="0.0001"
                                                     value={item[f] || 0}
                                                     onChange={e => handleChange(item.id, f, Number(e.target.value))}
@@ -115,7 +145,7 @@ export default function PrecosClientPage({ data }: { data: any[] }) {
                                     <tr key={item.id} className="border-b border-zinc-800/50 hover:bg-white/5 transition-colors">
                                         <td className="p-4 text-white font-medium">{item.diametro} <span className="text-zinc-500 ml-2">({item.passo})</span></td>
                                         <td className="p-4 text-center">
-                                            <input 
+                                            <input
                                                 type="number"
                                                 value={item.preco_caixa_base}
                                                 onChange={e => handleChange(item.id, 'preco_caixa_base', Number(e.target.value))}
@@ -123,7 +153,7 @@ export default function PrecosClientPage({ data }: { data: any[] }) {
                                             />
                                         </td>
                                         <td className="p-4 text-center">
-                                            <input 
+                                            <input
                                                 type="number"
                                                 value={item.preco_caixa_especial}
                                                 onChange={e => handleChange(item.id, 'preco_caixa_especial', Number(e.target.value))}
@@ -156,7 +186,7 @@ export default function PrecosClientPage({ data }: { data: any[] }) {
                                     <tr key={item.id} className="border-b border-zinc-800/50 hover:bg-white/5 transition-colors">
                                         <td className="p-4 text-white font-medium">{item.tamanho_mm}</td>
                                         <td className="p-4 text-right">
-                                            <input 
+                                            <input
                                                 type="number"
                                                 value={item.preco_cento}
                                                 onChange={e => handleChange(item.id, 'preco_cento', Number(e.target.value))}
@@ -189,7 +219,7 @@ export default function PrecosClientPage({ data }: { data: any[] }) {
                                     <tr key={item.id} className="border-b border-zinc-800/50 hover:bg-white/5 transition-colors">
                                         <td className="p-4 text-white font-medium">{item.nome}</td>
                                         <td className="p-4 text-right">
-                                            <input 
+                                            <input
                                                 type="number" step="0.01"
                                                 value={item.custo_unitario}
                                                 onChange={e => handleChange(item.id, 'custo_unitario', Number(e.target.value))}
