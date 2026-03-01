@@ -7,8 +7,6 @@
     
     COPY . .
     ENV NEXT_TELEMETRY_DISABLED 1
-    
-    # Build do Next.js
     RUN npm run build
     
     # --- STAGE 2: RUNTIME ---
@@ -23,11 +21,12 @@
     COPY --from=builder /app/.next/standalone ./
     COPY --from=builder /app/.next/static ./.next/static
     
-    # Proteção para a pasta public: só copia se ela existir de fato
+    # Proteção para a pasta public
     RUN if [ -d "/app/public" ]; then cp -r /app/public ./public; fi
     
-    # Instalar o Chromium para o usuário que vai rodar o app
-    RUN npx playwright install chromium
+    # CORREÇÃO: Instalar o playwright globalmente no runner para ter o comando disponível
+    # Ou usar o npx diretamente garantindo a instalação do binário
+    RUN npm install -g playwright && npx playwright install chromium
     
     EXPOSE 3002
     
